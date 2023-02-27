@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "825518165459",
+    "project_id": "pill-dispenser-bc748",
+    "storage_bucket": "pill-dispenser-bc748.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825518165459:android:0d3df9381d0357afd7f326",
+        "android_client_info": {
+          "package_name": "com.medical.PillDispenser"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "825518165459-8vd53echq8tm0c99co3ojlpbbh4desl8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeG87GQgow-HTt2c-6PGp-BuwlGnXTdrk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825518165459-8vd53echq8tm0c99co3ojlpbbh4desl8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "825518165459-3hlgk10ed5hl57s4b872p8u1c40ejjrn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.medical.PillDispenser"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

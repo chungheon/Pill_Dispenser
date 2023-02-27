@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>825518165459-3hlgk10ed5hl57s4b872p8u1c40ejjrn.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.825518165459-3hlgk10ed5hl57s4b872p8u1c40ejjrn</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDCTlOUS2C8_E50B_0cxYtt7hlLj8fmofc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>825518165459</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.medical.PillDispenser</string>
+	<key>PROJECT_ID</key>
+	<string>pill-dispenser-bc748</string>
+	<key>STORAGE_BUCKET</key>
+	<string>pill-dispenser-bc748.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:825518165459:ios:1a9e4dee4688df88d7f326</string>
+</dict>
+</plist>
