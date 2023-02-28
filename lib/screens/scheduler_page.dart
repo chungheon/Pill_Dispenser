@@ -57,8 +57,7 @@ class SchedulerPage extends StatelessWidget {
       scheduledTimes: timings,
       pill: pill,
     );
-    // await _scheduleController.scheduleTimings(
-    //     schedule, _userStateController.user.value?.uid ?? '');
+    await _scheduleController.scheduleTimings(schedule);
     await _scheduleController.storeScheduleData(
         schedule, _userStateController.user.value?.uid ?? '');
   }

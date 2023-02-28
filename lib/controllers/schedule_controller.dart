@@ -51,10 +51,6 @@ class ScheduleController extends GetxController {
     return scheduledDate;
   }
 
-  void updateScheduleData(Schedule schedule) {
-    scheduleBox?.put(schedule.pill?.pill ?? 'Error', schedule.toMap());
-  }
-
   Future<bool> hasPermission() async {
     if (Platform.isIOS) {
       permission = await flutterLocalNotificationsPlugin
@@ -154,10 +150,15 @@ class ScheduleController extends GetxController {
     return true;
   }
 
+  Future<void> updateSchedule(Schedule schedule, String userId) async {
+    await storeScheduleData(schedule, userId);
+    await updateNotifications(fetchOfflineData());
+  }
+
   Future<void> scheduleTimings(Schedule schedule) async {
-    List notifications =
-        await flutterLocalNotificationsPlugin.pendingNotificationRequests();
-    id = notifications.length;
+    int id =
+        (await flutterLocalNotificationsPlugin.pendingNotificationRequests())
+            .length;
     for (var scheduledTime in schedule.scheduledTimes) {
       // print(_getTime(scheduledTime.hour, scheduledTime.minute).toString());hh
       await flutterLocalNotificationsPlugin.zonedSchedule(
