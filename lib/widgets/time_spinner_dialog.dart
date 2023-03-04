@@ -5,10 +5,15 @@ import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 
 class TimeSpinnerDialog extends StatelessWidget {
-  TimeSpinnerDialog(DateTime dateTime, {Key? key}) : super(key: key) {
+  TimeSpinnerDialog(
+    DateTime dateTime, {
+    Key? key,
+    this.minutesInterval = 30,
+  }) : super(key: key) {
     this.dateTime.value = dateTime;
   }
   final Rx<DateTime> dateTime = Rx<DateTime>(DateTime.now());
+  final int minutesInterval;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class TimeSpinnerDialog extends StatelessWidget {
           TimePickerSpinner(
             is24HourMode: true,
             time: dateTime.value,
-            minutesInterval: 30,
+            minutesInterval: minutesInterval,
             normalTextStyle:
                 const TextStyle(fontSize: 30.0, color: Constants.black),
             highlightedTextStyle: const TextStyle(

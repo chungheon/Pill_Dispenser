@@ -50,9 +50,12 @@ class UserStateController extends GetxController {
             .onError((error, stackTrace) => throw Exception());
       } else {
         displayName.value = name;
-        user.value!
+        firebaseAuth.currentUser!
             .updateDisplayName(name)
-            .onError((error, stackTrace) => throw Exception());
+            .onError((error, stackTrace) {
+          print(error);
+          throw Exception();
+        });
       }
     } catch (e) {
       return false;

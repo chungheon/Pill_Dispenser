@@ -35,10 +35,22 @@ class ScheduleController extends GetxController {
     if (pillBox == null || formatDateToStr(now) != pillBox!.name) {
       pillBox = await Hive.openBox(formatDateToStr(now) + userId);
     }
+
     var existData = pillBox?.get(pillName, defaultValue: []);
     existData.add(
         {scheduledTime.millisecondsSinceEpoch: now.millisecondsSinceEpoch});
+    await updatePillStatusOnline(existData, userId, now, pillName);
     pillBox?.put(pillName, existData);
+  }
+
+  Future<void> updatePillStatusOnline(
+      List<dynamic> data, String userId, DateTime now, String pill) async {
+    if (userId.isNotEmpty) {
+      DocumentReference ref = _firestore.collection("user_report").doc(userId);
+      await ref.set({
+        formatDateToStr(now) + userId: {pill: data.toString()}
+      }, SetOptions(merge: true));
+    }
   }
 
   tz.TZDateTime _getTime(int hour, int minute) {
@@ -75,6 +87,11 @@ class ScheduleController extends GetxController {
 
   String formatDateToStr(DateTime date) {
     String formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    return formattedDate;
+  }
+
+  String formatDateToStrTime(DateTime date) {
+    String formattedDate = DateFormat('HH:mm').format(date);
     return formattedDate;
   }
 
@@ -239,6 +256,22 @@ class ScheduleController extends GetxController {
         return -1;
       }
     }
+  }
+
+  Future<List<int>> getCompletedAmountPerPill(String pillName,
+      DateTime startDate, DateTime endDate, String userId) async {
+    Duration diffDays = startDate.difference(endDate);
+    DateTime date = startDate;
+    List<int> completed = [];
+    for (int i = 0; i < diffDays.inDays * -1; i++) {
+      date = date.add(const Duration(days: 1));
+      Box boxData = await Hive.openBox(formatDateToStr(date) + userId);
+      Map dayData = boxData.toMap();
+      int totalCompleted = 0;
+      totalCompleted = (dayData[pillName] ?? []).length;
+      completed.add(totalCompleted);
+    }
+    return completed;
   }
 
   Future<List<int>> getCompletedAmount(

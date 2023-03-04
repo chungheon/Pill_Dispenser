@@ -25,7 +25,6 @@ class Schedule {
 
   void upToDate(DateTime now) {
     scheduledTimes = scheduledTimes.map((e) {
-      print(DateTime(2023, 1, 32));
       DateTime newDateTime;
       if (now.isAfter(e)) {
         newDateTime =

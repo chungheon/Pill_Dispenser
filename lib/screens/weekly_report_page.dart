@@ -15,8 +15,10 @@ class WeeklyReportPage extends StatelessWidget {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
   final RxList<int> completedValues = <int>[].obs;
-  final RxInt highestValue = 0.obs;
-  final RxInt totalNotifications = 0.obs;
+  final RxList<List<int>> pillCompletedValues = RxList<List<int>>.empty();
+  final RxList<int> highestValue = <int>[].obs;
+  final RxList<int> totalNotificationsPills = <int>[].obs;
+  final RxList<String> pillNames = <String>[].obs;
 
   LineTouchData get lineTouchData1 => LineTouchData(
         handleBuiltInTouches: true,
@@ -74,24 +76,15 @@ class WeeklyReportPage extends StatelessWidget {
         ),
       );
 
-  Widget leftTitleWidgets(double value, TitleMeta meta) {
+  Widget leftTitleWidgets(
+    double value,
+    TitleMeta meta,
+  ) {
     const style = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 14,
     );
-    int split = (highestValue.value / 25).toInt();
-    String text = "0";
-    switch (split) {
-      case 0:
-        text = value.toInt().toString();
-        break;
-      case 1:
-        text = (value.toInt() % 2 == 0 ? value.toInt() : '').toString();
-        break;
-      default:
-        text = (value.toInt() % split == 0 ? value.toInt() : '').toString();
-        break;
-    }
+    String text = value.toInt().toString();
 
     return Text(text, style: style, textAlign: TextAlign.center);
   }
@@ -122,35 +115,27 @@ class WeeklyReportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(((timeStamp) async {
       DateTime now = DateTime.now();
-      List<int> completed = await _scheduleController.getCompletedAmount(
-          now.subtract(const Duration(days: 7)),
-          now,
-          _userStateController.user.value?.uid ?? "ERROR");
       var scheduleData = _scheduleController.fetchOfflineData();
-      int total = 0;
-      scheduleData.forEach((key, value) {
-        var timings = value['scheduledTimes'];
-        if (timings.runtimeType == List<int>) {
-          total += (timings as List).length;
-        }
-      });
-      completedValues.value = completed;
-      highestValue.value = completed.reduce(max) + 1;
-      totalNotifications.value = total;
-
-      // labelX.clear();
-      // for (int i = 6; i >= 0; i--) {
-      //   labelX.add(_scheduleController
-      //       .formatDateToStr(now.subtract(Duration(days: i)))
-      //       .substring(0, 5));
-      // }
-      // labelY.value = [for (var i = 0; i <= completed.last; i++) i.toString()];
-      // features.clear();
-      // features.add(Feature(
-      //   title: "Completed",
-      //   color: Constants.primary,
-      //   data: completed.map((e) => e.toDouble()).toList(),
-      // ));
+      pillCompletedValues.clear();
+      highestValue.clear();
+      totalNotificationsPills.clear();
+      scheduleData.forEach(
+        (key, value) async {
+          List<int> completed =
+              await _scheduleController.getCompletedAmountPerPill(
+                  key,
+                  now.subtract(const Duration(days: 7)),
+                  now,
+                  _userStateController.user.value?.uid ?? 'ERROR');
+          pillCompletedValues.add(completed);
+          highestValue.add(completed.reduce(max) + 1);
+          totalNotificationsPills.add((value['scheduledTimes'] ?? []).length);
+          pillNames.add(key);
+        },
+      );
+      // completedValues.value = completed;
+      // highestValue.value = completed.reduce(max) + 1;
+      // totalNotifications.value = total;
     }));
     return StandardScaffold(
         appBar: const StandardAppBar().appBar(),
@@ -164,38 +149,51 @@ class WeeklyReportPage extends StatelessWidget {
                   style:
                       TextStyle(fontSize: 25.0, fontWeight: FontWeight.w500)),
             ),
-            Column(
-              children: [
-                Obx(
-                  () {
-                    return Container(
-                      width: Get.width,
-                      height: Get.width * 1.5,
-                      padding: const EdgeInsets.only(right: 15.0, top: 15.0),
-                      child: LineChart(
-                        getLineChartData(completedValues.value),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(
-                  height: 15.0,
-                ),
-                Center(
-                  child: Obx(
-                    () => Text(
-                        'Total Notifications: ${totalNotifications.value.toString()}',
-                        style: const TextStyle(
-                            fontSize: 25.0, fontWeight: FontWeight.w500)),
-                  ),
-                ),
-              ],
-            )
+            Expanded(
+              child: Obx(() {
+                return ListView.builder(
+                    itemCount: pillCompletedValues.length,
+                    itemBuilder: ((context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Pill: ${pillNames[index]}',
+                              style: const TextStyle(
+                                  fontSize: 20.0, fontWeight: FontWeight.w500),
+                            ),
+                            Container(
+                              width: Get.width,
+                              height: Get.width * 0.8,
+                              padding:
+                                  const EdgeInsets.only(right: 15.0, top: 15.0),
+                              child: LineChart(
+                                getLineChartData(
+                                    pillCompletedValues[index], index),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 15.0,
+                            ),
+                            Center(
+                              child: Text(
+                                  'Total Notifications Per Day: ${totalNotificationsPills[index].toString()}',
+                                  style: const TextStyle(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w500)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }));
+              }),
+            ),
           ],
         ));
   }
 
-  LineChartData getLineChartData(List<int> values) {
+  LineChartData getLineChartData(List<int> values, int index) {
     return LineChartData(
       lineTouchData: lineTouchData1,
       gridData: FlGridData(show: false),
@@ -204,7 +202,7 @@ class WeeklyReportPage extends StatelessWidget {
       lineBarsData: [getData(values)],
       minX: 0,
       maxX: 7,
-      maxY: (highestValue.value).toDouble(),
+      maxY: (highestValue[index]).toDouble(),
       minY: 0,
     );
   }

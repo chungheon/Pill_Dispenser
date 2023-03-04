@@ -8,14 +8,26 @@ import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
 import '../widgets/custom_splash_button.dart';
 
-class PatientDetailsPage extends StatelessWidget {
-  PatientDetailsPage({Key? key}) : super(key: key) {
-    name.value = _userStateController.displayName.value;
-  }
+class PatientDetailsPage extends StatefulWidget {
+  PatientDetailsPage({Key? key}) : super(key: key);
+
+  @override
+  State<PatientDetailsPage> createState() => _PatientDetailsPageState();
+}
+
+class _PatientDetailsPageState extends State<PatientDetailsPage> {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
+
   final RxBool isEdit = false.obs;
+
   final RxString name = ''.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    name.value = _userStateController.displayName.value;
+  }
 
   Future<void> updateDetails() async {
     await _userStateController.updateDetails(name.value);
@@ -91,13 +103,16 @@ class PatientDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> listItems = _readOnlyListItems();
+    if (isEdit.value) {
+      listItems = _writeListItems();
+    }
     return StandardScaffold(
         child: Column(
       children: [
         PreferredSize(
           preferredSize: const Size(double.infinity, 60.0),
           child: Obx(() {
-            print("called");
             if (isEdit.value) {
               return StandardAppBar(
                 action: Padding(
@@ -110,6 +125,7 @@ class PatientDetailsPage extends StatelessWidget {
                         name.value = _userStateController.displayName.value;
                       }
                       isEdit.value = false;
+                      setState(() {});
                     },
                     child: const Icon(
                       Icons.check,
@@ -126,6 +142,7 @@ class PatientDetailsPage extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {
                     isEdit.value = true;
+                    setState(() {});
                   },
                   child: const Icon(
                     Icons.edit,
@@ -137,16 +154,10 @@ class PatientDetailsPage extends StatelessWidget {
             ).appBar();
           }),
         ),
-        Expanded(child: Obx(() {
-          print("");
-          List<Widget> listItems = _readOnlyListItems();
-          if (isEdit.value) {
-            listItems = _writeListItems();
-          }
-          return ListView(
-            children: listItems,
-          );
-        })),
+        Expanded(
+            child: ListView(
+          children: listItems,
+        )),
       ],
     ));
   }

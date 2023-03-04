@@ -10,6 +10,7 @@ import 'package:pill_dispenser/screens/login_home_page.dart';
 import 'package:pill_dispenser/screens/patient_details_page.dart';
 import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
+import 'package:pill_dispenser/screens/schedule_appointment_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
 import 'package:pill_dispenser/screens/weekly_report_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
@@ -155,7 +156,8 @@ class _UserHomePageState extends State<UserHomePage>
     data = await _scheduleController.getUpcomingNotifications(
         _userStateController.user.value?.uid ?? "ERROR");
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      setState(() {});
+      Future.delayed(Duration(milliseconds: 300))
+          .then((time) => setState(() {}));
     });
   }
 
@@ -348,6 +350,16 @@ class _UserHomePageState extends State<UserHomePage>
                         title: 'Scheduling',
                         onTap: () {
                           Get.to(() => SchedulerPage());
+                        },
+                        padding: const EdgeInsets.symmetric(vertical: 15.0),
+                      ),
+                      const SizedBox(
+                        height: 20.0,
+                      ),
+                      CustomSplashButton(
+                        title: 'Schedule Appointment',
+                        onTap: () {
+                          Get.to(() => ScheduleAppointmentPage());
                         },
                         padding: const EdgeInsets.symmetric(vertical: 15.0),
                       ),
