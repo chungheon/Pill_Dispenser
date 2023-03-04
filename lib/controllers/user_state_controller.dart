@@ -26,6 +26,10 @@ class UserStateController extends GetxController {
     });
   }
 
+  Future<void> updateDetails(String newName) async {
+    await updateDisplayName(newName);
+  }
+
   void logOut() {
     flutterLocalNotificationsPlugin.cancelAll();
     syncProgress.value = 0;

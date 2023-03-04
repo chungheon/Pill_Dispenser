@@ -8,6 +8,7 @@ import 'package:pill_dispenser/models/pill.dart';
 import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/screens/login_home_page.dart';
 import 'package:pill_dispenser/screens/patient_details_page.dart';
+import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
 import 'package:pill_dispenser/screens/weekly_report_page.dart';
@@ -279,7 +280,7 @@ class _UserHomePageState extends State<UserHomePage>
             ),
             ListTile(
               leading: const Icon(Icons.person),
-              title: const Text('Patient Details '),
+              title: const Text('Patient Details'),
               onTap: () {
                 Get.back();
                 Get.to(() => PatientDetailsPage());
@@ -324,9 +325,9 @@ class _UserHomePageState extends State<UserHomePage>
                         height: 20.0,
                       ),
                       CustomSplashButton(
-                        title: 'Patient Details',
+                        title: 'Tracker',
                         onTap: () {
-                          Get.to(() => PatientDetailsPage());
+                          Get.to(() => PillTrackingDetailsPage());
                         },
                         padding: const EdgeInsets.symmetric(vertical: 15.0),
                       ),
