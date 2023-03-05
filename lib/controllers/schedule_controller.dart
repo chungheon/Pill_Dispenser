@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -130,9 +131,9 @@ class ScheduleController extends GetxController {
       // print(sch.scheduledTimes.length);
     }
     var notifications = await getAllPendingNotifications();
-    for (var notification in notifications) {
-      print("${notification.title} ${notification.body} ${notification.id}");
-    }
+    // for (var notification in notifications) {
+    //   print("${notification.title} ${notification.body} ${notification.id}");
+    // }
   }
 
   List<Schedule> formatToScheduleList(Map<dynamic, dynamic> data) {
@@ -170,6 +171,34 @@ class ScheduleController extends GetxController {
   Future<void> updateSchedule(Schedule schedule, String userId) async {
     await storeScheduleData(schedule, userId);
     await updateNotifications(fetchOfflineData());
+  }
+
+  Future<void> fetchReportOnlineData(String userId) async {
+    var ref = _firestore.collection('user_report').doc(userId);
+    var reportDoc = await ref.get();
+    await Future.forEach<MapEntry<String, dynamic>>(reportDoc.data()!.entries,
+        (element) async {
+      var box = await Hive.openBox(element.key.toString());
+      var pillMap = Map<String, dynamic>.from(element.value);
+      await box.clear();
+      await Future.forEach<MapEntry<String, dynamic>>(element.value.entries,
+          (map) async {
+        var completedData = map.value
+            .toString()
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll('{', '')
+            .replaceAll('}', '')
+            .split(',')
+            .map<Map<String, String>>((e) {
+          var data = e.split(':');
+          Map<String, String> mapData = {};
+          mapData[data[0]] = data[1];
+          return mapData;
+        }).toList();
+        await box.put(map.key, completedData);
+      });
+    });
   }
 
   Future<void> scheduleTimings(Schedule schedule) async {
@@ -211,8 +240,8 @@ class ScheduleController extends GetxController {
   Future<List<Map<dynamic, dynamic>>> getUpcomingNotifications(
       String userId) async {
     DateTime now = DateTime.now();
-    if (now.subtract(Duration(minutes: 5)).day == now.day) {
-      now = now.subtract(Duration(minutes: 5));
+    if (now.subtract(const Duration(minutes: 5)).day == now.day) {
+      now = now.subtract(const Duration(minutes: 5));
     }
     var completed = await getCurrDayData(userId);
     var schedules = formatToScheduleList(fetchOfflineData());

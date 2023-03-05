@@ -37,10 +37,13 @@ class HomePage extends StatelessWidget {
 
         await _scheduleController
             .fetchOnlineData(_userStateController.user.value!.uid);
+        _userStateController.syncProgress.value = 30;
       }
-      _userStateController.syncProgress.value = 30;
+      _userStateController.syncProgress.value = 60;
+      await _scheduleController
+          .fetchReportOnlineData(_userStateController.user.value!.uid);
       progress.value = "Setting Up Notifications";
-      await Future.delayed(const Duration(milliseconds: 1500));
+      // await Future.delayed(const Duration(milliseconds: 1500));
       _userStateController.syncProgress.value = 100;
     }
   }
@@ -368,7 +371,9 @@ class _UserHomePageState extends State<UserHomePage>
                       ),
                       CustomSplashButton(
                         title: 'Weekly Report',
-                        onTap: () {
+                        onTap: () async {
+                          // await _scheduleController.fetchReportOnlineData(
+                          //     _userStateController.user.value!.uid);
                           Get.to(() => WeeklyReportPage());
                         },
                         padding: const EdgeInsets.symmetric(vertical: 15.0),
