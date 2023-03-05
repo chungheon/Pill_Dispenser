@@ -130,7 +130,7 @@ class ScheduleController extends GetxController {
       await scheduleTimings(sch);
       // print(sch.scheduledTimes.length);
     }
-    var notifications = await getAllPendingNotifications();
+    // var notifications = await getAllPendingNotifications();
     // for (var notification in notifications) {
     //   print("${notification.title} ${notification.body} ${notification.id}");
     // }
@@ -321,5 +321,50 @@ class ScheduleController extends GetxController {
       completed.add(totalCompleted);
     }
     return completed;
+  }
+
+  Future<void> scheduleAppointment(String userId, String appointmentName,
+      DateTime appointmentDate, DateTime appointmentTime,
+      {DateTime? alarmTime}) async {
+    var ref = _firestore
+        .collection('user_appointments')
+        .doc(userId)
+        .collection('appointments');
+    var doc = ref.doc();
+    var aptDateTime = DateTime(appointmentDate.year, appointmentDate.month,
+        appointmentDate.day, appointmentTime.hour, appointmentTime.minute);
+    await doc.set({
+      'name': appointmentName,
+      'date': aptDateTime.millisecondsSinceEpoch,
+    });
+
+    await scheduleAppointmentAlarm(appointmentName, aptDateTime);
+  }
+
+  Future<void> scheduleAppointmentAlarm(
+      String name, DateTime appointedDate) async {
+    DateTime now = DateTime.now();
+    int diffMins = appointedDate.difference(now).inMinutes;
+    int id =
+        (await flutterLocalNotificationsPlugin.pendingNotificationRequests())
+            .length;
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id++,
+      "$name Appointment",
+      'You have an appointment at ${formatDateToStrTime(appointedDate)}',
+      tz.TZDateTime.now(tz.local).add(Duration(minutes: diffMins)),
+      const NotificationDetails(
+          android: AndroidNotificationDetails('daily notification channel id',
+              'daily notification channel name',
+              // sound: RawResourceAndroidNotificationSound('notification'),
+              channelDescription: 'daily notification description'),
+          iOS: DarwinNotificationDetails(
+              // sound: 'alarm.wav',
+              categoryIdentifier: 'id_3',
+              interruptionLevel: InterruptionLevel.active)),
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidAllowWhileIdle: true,
+    );
   }
 }

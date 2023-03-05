@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pill_dispenser/controllers/schedule_controller.dart';
+import 'package:pill_dispenser/controllers/user_state_controller.dart';
+import 'package:pill_dispenser/screens/forget_password_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
@@ -13,6 +15,8 @@ import '../widgets/custom_input_text_box_widget.dart';
 class ScheduleAppointmentPage extends StatelessWidget {
   ScheduleAppointmentPage({Key? key}) : super(key: key);
   final ScheduleController _scheduleController = Get.find<ScheduleController>();
+  final UserStateController _userStateController =
+      Get.find<UserStateController>();
   final RxString appointmentName = ''.obs;
   final Rxn<DateTime> selectedDate = Rxn<DateTime>();
   final Rx<DateTime> pageDate =
@@ -83,8 +87,27 @@ class ScheduleAppointmentPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: CustomSplashButton(
                 title: 'Schedule Appointment',
-                onTap: () {
-                  Get.back();
+                onTap: () async {
+                  if (appointmentName.trim().isNotEmpty &&
+                      selectedDate.value != null &&
+                      selectedTime.value != null) {
+                    await _scheduleController.scheduleAppointment(
+                        _userStateController.user.value?.uid ?? 'ERROR',
+                        appointmentName.value,
+                        selectedDate.value ?? DateTime.now(),
+                        selectedTime.value ?? DateTime.now());
+                    Get.back();
+                  } else {
+                    showDialog(
+                        context: context,
+                        builder: ((dContext) {
+                          return const DefaultErrorDialog(
+                            title: 'Unable to continue',
+                            message:
+                                'Please enter a Name, Date and Time to continue.',
+                          );
+                        }));
+                  }
                 },
               ),
             ),

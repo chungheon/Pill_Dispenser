@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 
@@ -42,10 +43,7 @@ class TimeSpinnerDialog extends StatelessWidget {
             padding: const EdgeInsets.all(10.0),
             child: Obx(
               () => CustomSplashButton(
-                title: 'Confirm ' +
-                    dateTime.value.hour.toString().padLeft(2, '0') +
-                    ":" +
-                    dateTime.value.minute.toString().padRight(2, '0'),
+                title: 'Confirm ${formatDateToStrTime(dateTime.value)}',
                 onTap: () {
                   // print(dateTime.toString());
                   Get.back(result: dateTime.value);
@@ -56,5 +54,10 @@ class TimeSpinnerDialog extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String formatDateToStrTime(DateTime date) {
+    String formattedDate = DateFormat('HH:mm').format(date);
+    return formattedDate;
   }
 }
