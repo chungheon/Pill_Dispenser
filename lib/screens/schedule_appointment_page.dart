@@ -18,6 +18,7 @@ class ScheduleAppointmentPage extends StatelessWidget {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
   final RxString appointmentName = ''.obs;
+  final RxString msg = ''.obs;
   final Rxn<DateTime> selectedDate = Rxn<DateTime>();
   final Rx<DateTime> pageDate =
       Rx<DateTime>(DateTime.now().add(const Duration(days: 1)));
@@ -39,7 +40,15 @@ class ScheduleAppointmentPage extends StatelessWidget {
                   appointmentName, 'Enter Appointment Name'),
             ),
             const SizedBox(
-              height: 10.0,
+              height: 20.0,
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: _buildEditInformationDisplay(
+                  'Message (Optional)', appointmentName, 'Message'),
+            ),
+            const SizedBox(
+              height: 20.0,
             ),
             _buildCalenderDisplay(),
             Container(
@@ -95,7 +104,8 @@ class ScheduleAppointmentPage extends StatelessWidget {
                         _userStateController.user.value?.uid ?? 'ERROR',
                         appointmentName.value,
                         selectedDate.value ?? DateTime.now(),
-                        selectedTime.value ?? DateTime.now());
+                        selectedTime.value ?? DateTime.now(),
+                        message: msg.value);
                     Get.back();
                   } else {
                     showDialog(

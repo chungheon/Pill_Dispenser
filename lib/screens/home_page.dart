@@ -12,6 +12,7 @@ import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
 import 'package:pill_dispenser/screens/schedule_appointment_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
+import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:pill_dispenser/screens/weekly_report_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
@@ -32,18 +33,17 @@ class HomePage extends StatelessWidget {
       final offlineData = _scheduleController.fetchOfflineData();
       final pendingNotif =
           await _scheduleController.getAllPendingNotifications();
-      if (offlineData.isEmpty || pendingNotif.isEmpty) {
-        progress.value = "Fetching Online Data";
 
-        await _scheduleController
-            .fetchOnlineData(_userStateController.user.value!.uid);
-        _userStateController.syncProgress.value = 30;
-      }
-      _userStateController.syncProgress.value = 60;
+      progress.value = "Fetching Online Data";
       await _scheduleController
           .fetchReportOnlineData(_userStateController.user.value!.uid);
+      _userStateController.syncProgress.value = 30;
       progress.value = "Setting Up Notifications";
-      // await Future.delayed(const Duration(milliseconds: 1500));
+      await _scheduleController
+          .fetchOnlineData(_userStateController.user.value!.uid);
+      _userStateController.syncProgress.value = 60;
+      await _scheduleController
+          .fetchAppointmentsData(_userStateController.user.value!.uid);
       _userStateController.syncProgress.value = 100;
     }
   }
@@ -359,12 +359,33 @@ class _UserHomePageState extends State<UserHomePage>
                       const SizedBox(
                         height: 20.0,
                       ),
-                      CustomSplashButton(
-                        title: 'Schedule Appointment',
-                        onTap: () {
-                          Get.to(() => ScheduleAppointmentPage());
-                        },
-                        padding: const EdgeInsets.symmetric(vertical: 15.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: CustomSplashButton(
+                              title: 'Schedule Appt',
+                              onTap: () {
+                                Get.to(() => ScheduleAppointmentPage());
+                              },
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 15.0),
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 20.0,
+                          ),
+                          Expanded(
+                            child: CustomSplashButton(
+                              title: 'View Appt',
+                              onTap: () {
+                                Get.to(() => ViewAppointmentPage());
+                              },
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 15.0),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(
                         height: 20.0,

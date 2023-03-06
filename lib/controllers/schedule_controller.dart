@@ -8,6 +8,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:pill_dispenser/main.dart';
 import 'package:pill_dispenser/models/schedule.dart';
+import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class ScheduleController extends GetxController {
@@ -86,8 +87,23 @@ class ScheduleController extends GetxController {
     return permission;
   }
 
-  String formatDateToStr(DateTime date) {
+  static const List<String> days = [
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
+    'FRIDAY',
+    'SATURDAY',
+    'SUNDAY'
+  ];
+  static final DateTime MONDAY_REFERENCE = DateTime(2022, 1, 31);
+
+  String formatDateToStr(DateTime date, {bool? showDay}) {
     String formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    if (showDay ?? false) {
+      int dayIndex = MONDAY_REFERENCE.difference(date).inDays % 7;
+      formattedDate += ' (${days[dayIndex]})';
+    }
     return formattedDate;
   }
 
@@ -325,33 +341,35 @@ class ScheduleController extends GetxController {
 
   Future<void> scheduleAppointment(String userId, String appointmentName,
       DateTime appointmentDate, DateTime appointmentTime,
-      {DateTime? alarmTime}) async {
+      {String? message}) async {
     var ref = _firestore
         .collection('user_appointments')
         .doc(userId)
         .collection('appointments');
     var doc = ref.doc();
-    var aptDateTime = DateTime(appointmentDate.year, appointmentDate.month,
-        appointmentDate.day, appointmentTime.hour, appointmentTime.minute);
-    await doc.set({
-      'name': appointmentName,
-      'date': aptDateTime.millisecondsSinceEpoch,
-    });
+    Appointment apt = Appointment.fromSchedule(
+        appointmentName, appointmentDate, appointmentTime,
+        message: message);
+    await doc.set(apt.toMap());
 
-    await scheduleAppointmentAlarm(appointmentName, aptDateTime);
+    await scheduleAppointmentAlarm(apt);
   }
 
-  Future<void> scheduleAppointmentAlarm(
-      String name, DateTime appointedDate) async {
+  Future<void> scheduleAppointmentAlarm(Appointment appointment) async {
     DateTime now = DateTime.now();
-    int diffMins = appointedDate.difference(now).inMinutes;
+    int diffMins = appointment.apptDateTime?.difference(now).inMinutes ?? 0;
     int id =
         (await flutterLocalNotificationsPlugin.pendingNotificationRequests())
             .length;
+    String message =
+        'You have an appointment at ${formatDateToStrTime(appointment.apptDateTime ?? DateTime.fromMillisecondsSinceEpoch(0))}';
+    if (appointment.message != null && appointment.message!.isNotEmpty) {
+      message = appointment.message!;
+    }
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id++,
-      "$name Appointment",
-      'You have an appointment at ${formatDateToStrTime(appointedDate)}',
+      "${appointment.name} Appointment",
+      message,
       tz.TZDateTime.now(tz.local).add(Duration(minutes: diffMins)),
       const NotificationDetails(
           android: AndroidNotificationDetails('daily notification channel id',
@@ -366,5 +384,27 @@ class ScheduleController extends GetxController {
           UILocalNotificationDateInterpretation.absoluteTime,
       androidAllowWhileIdle: true,
     );
+  }
+
+  Future<void> fetchAppointmentsData(String userId) async {
+    List<Appointment> appts = await fetchAppointmentsOnline(userId);
+    for (var appt in appts) {
+      await scheduleAppointmentAlarm(appt);
+    }
+  }
+
+  Future<List<Appointment>> fetchAppointmentsOnline(String userId) async {
+    CollectionReference ref = _firestore
+        .collection('user_appointments')
+        .doc(userId)
+        .collection('appointments');
+    QuerySnapshot snapshot = await ref.get();
+    List<QueryDocumentSnapshot> docs = snapshot.docs;
+    var appointmentList = docs.map((doc) {
+      Appointment appt =
+          Appointment.fromJson(Map<String, dynamic>.from(doc.data() as Map));
+      return appt;
+    }).toList();
+    return appointmentList;
   }
 }
