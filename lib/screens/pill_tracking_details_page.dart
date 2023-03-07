@@ -303,7 +303,9 @@ class PillTrackingDetailsPage extends StatelessWidget {
                         width: 100.0,
                         margin: const EdgeInsets.only(right: 15.0),
                         decoration: BoxDecoration(
-                            color: Constants.white,
+                            color: isCompleted
+                                ? Constants.primary.withOpacity(0.5)
+                                : Constants.white,
                             borderRadius: BorderRadius.circular(15.0),
                             boxShadow: [
                               BoxShadow(
