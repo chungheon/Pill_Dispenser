@@ -1,11 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pill_dispenser/controllers/patient_info_mixin.dart';
+import 'package:pill_dispenser/controllers/user_info_mixin.dart';
 
-class UserStateController extends GetxController {
-  Rxn<User> user = Rxn<User>();
-  RxString displayName = RxString('');
+class UserStateController extends GetxController
+    with UserInfoMixin, PatientInfoMixin {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -26,41 +28,25 @@ class UserStateController extends GetxController {
     });
   }
 
-  Future<void> updateDetails(String newName) async {
-    await updateDisplayName(newName);
+  Future<bool> updateDetails(
+      String name, String contact, DateTime? bday) async {
+    User? user = firebaseAuth.currentUser;
+    if (user != null) {
+      return await updateUserDetails(name, contact, bday);
+    } else {
+      return false;
+    }
   }
 
   void logOut() {
     flutterLocalNotificationsPlugin.cancelAll();
     syncProgress.value = 0;
+    clearUserData();
     firebaseAuth.signOut();
   }
 
   void fetchDefaultName() {
     displayName.value = user.value?.displayName ?? '';
-  }
-
-  Future<bool> updateDisplayName(String name,
-      {UserCredential? userCred}) async {
-    try {
-      if (userCred != null) {
-        displayName.value = name;
-        userCred.user!
-            .updateDisplayName(name)
-            .onError((error, stackTrace) => throw Exception());
-      } else {
-        displayName.value = name;
-        firebaseAuth.currentUser!
-            .updateDisplayName(name)
-            .onError((error, stackTrace) {
-          // print(error);
-          throw Exception();
-        });
-      }
-    } catch (e) {
-      return false;
-    }
-    return true;
   }
 
   Future<UserCredential> loginWithGoogle() async {

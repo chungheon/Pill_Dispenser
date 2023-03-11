@@ -296,7 +296,8 @@ class PillTrackingDetailsPage extends StatelessWidget {
                           completed[currSchedule.pill?.pill ?? ''] ?? [];
                       bool isCompleted = completedList
                           .where((element) =>
-                              element.keys.first ==
+                              (int.tryParse(element.keys.first.toString()) ??
+                                  0) ==
                               scheduledTime.millisecondsSinceEpoch)
                           .isNotEmpty;
                       return Container(

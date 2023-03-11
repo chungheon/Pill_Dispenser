@@ -4,10 +4,11 @@ import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/schedule_controller.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/main.dart';
-import 'package:pill_dispenser/models/pill.dart';
 import 'package:pill_dispenser/models/schedule.dart';
+import 'package:pill_dispenser/screens/guardian_requests_list_page.dart';
 import 'package:pill_dispenser/screens/login_home_page.dart';
 import 'package:pill_dispenser/screens/patient_details_page.dart';
+import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
 import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
 import 'package:pill_dispenser/screens/schedule_appointment_page.dart';
@@ -30,9 +31,12 @@ class HomePage extends StatelessWidget {
       progress.value = "Setting up Local Storage...";
       await _scheduleController.setBox(_userStateController.user.value!.uid);
       _userStateController.syncProgress.value = 10;
-      final offlineData = _scheduleController.fetchOfflineData();
-      final pendingNotif =
-          await _scheduleController.getAllPendingNotifications();
+      // final offlineData = _scheduleController.fetchOfflineData();
+      // final pendingNotif =
+      //     await _scheduleController.getAllPendingNotifications();
+      progress.value = "Fetching User Details...";
+      await _userStateController.fetchUserDetails();
+      _userStateController.syncProgress.value = 20;
 
       progress.value = "Fetching Online Data";
       await _scheduleController
@@ -194,6 +198,7 @@ class _UserHomePageState extends State<UserHomePage>
 
     completed.value = await _scheduleController
         .getCurrDayData(_userStateController.user.value?.uid ?? "ERROR");
+    print(completed.value);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       Future.delayed(const Duration(milliseconds: 300))
           .then((time) => setState(() {}));
@@ -366,6 +371,7 @@ class _UserHomePageState extends State<UserHomePage>
       state: scaffoldKey,
       drawer: Drawer(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DrawerHeader(
               decoration: const BoxDecoration(
@@ -406,6 +412,14 @@ class _UserHomePageState extends State<UserHomePage>
               onTap: () {
                 Get.back();
                 Get.to(() => PatientDetailsPage());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Guardian Requests'),
+              onTap: () {
+                Get.back();
+                Get.to(() => GuardianRequestsListPage());
               },
             ),
             ListTile(
@@ -504,9 +518,9 @@ class _UserHomePageState extends State<UserHomePage>
                   CustomSplashButton(
                     title: 'Weekly Report',
                     onTap: () async {
-                      // await _scheduleController.fetchReportOnlineData(
-                      //     _userStateController.user.value!.uid);
-                      Get.to(() => WeeklyReportPage());
+                      // Get.to(() => WeeklyReportPage());
+                      Get.to(() => PatientWeeklyReportPage(
+                          _userStateController.patient.first));
                     },
                     padding: const EdgeInsets.symmetric(vertical: 15.0),
                   ),
@@ -596,11 +610,10 @@ class _UserHomePageState extends State<UserHomePage>
       int index, int scheduleIndex, scheduledTime, bool isSkipped) {
     Schedule currSchedule = specificTimeSchedule[index][scheduleIndex];
     List completedList = completed[currSchedule.pill?.pill ?? ''] ?? [];
-    bool isCompleted = completedList
-        .where((element) =>
-            element.keys.first == scheduledTime.millisecondsSinceEpoch)
-        .isNotEmpty;
-
+    bool isCompleted = completedList.where((element) {
+      return (int.tryParse(element.keys.first.toString()) ?? 0) ==
+          scheduledTime.millisecondsSinceEpoch;
+    }).isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(15.0),
       decoration: BoxDecoration(

@@ -51,8 +51,8 @@ class RegisterPage extends StatelessWidget {
             .onError((error, stackTrace) {
           throw error?.toString() ?? Exception('Unable to login');
         });
-        bool updateResult = await _userStateController
-            .updateDisplayName(name.value, userCred: userCred);
+        bool updateResult =
+            await _userStateController.updateDisplayName(name.value);
         if (!updateResult) {
           await showDialog(
               context: Get.context!,
@@ -127,14 +127,12 @@ class RegisterPage extends StatelessWidget {
                     title: "Name",
                     type: TextInputType.text,
                     prefix: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: ShaderMaskImageIcon(
-                        width: 25.0,
-                        imageUrl: 'assets/icons/user.png',
-                        gradient: LinearGradient(
-                            colors: [Constants.primary, Constants.primary]),
-                      ),
-                    ),
+                        padding: EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Icon(
+                          Icons.contacts,
+                          size: 25.0,
+                          color: Constants.primary,
+                        )),
                   ),
                 ),
                 const SizedBox(

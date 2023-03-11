@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
@@ -62,6 +63,8 @@ class ScheduleController extends GetxController {
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
+    scheduledDate =
+        scheduledDate.subtract(Duration(seconds: scheduledDate.second));
     return scheduledDate;
   }
 
@@ -129,7 +132,7 @@ class ScheduleController extends GetxController {
   Future<void> fetchOnlineData(String userId) async {
     DocumentReference ref = _firestore.collection("user_schedule").doc(userId);
     DocumentSnapshot doc = await ref.get();
-    updateNotifications((doc.data() ?? {}) as Map);
+    await updateNotifications((doc.data() ?? {}) as Map);
   }
 
   Future<void> updateNotifications(Map data) async {
@@ -192,29 +195,31 @@ class ScheduleController extends GetxController {
   Future<void> fetchReportOnlineData(String userId) async {
     var ref = _firestore.collection('user_report').doc(userId);
     var reportDoc = await ref.get();
-    await Future.forEach<MapEntry<String, dynamic>>(reportDoc.data()!.entries,
-        (element) async {
-      var box = await Hive.openBox(element.key.toString());
-      var pillMap = Map<String, dynamic>.from(element.value);
-      await box.clear();
-      await Future.forEach<MapEntry<String, dynamic>>(element.value.entries,
-          (map) async {
-        var completedData = map.value
-            .toString()
-            .replaceAll('[', '')
-            .replaceAll(']', '')
-            .replaceAll('{', '')
-            .replaceAll('}', '')
-            .split(',')
-            .map<Map<String, String>>((e) {
-          var data = e.split(':');
-          Map<String, String> mapData = {};
-          mapData[data[0]] = data[1];
-          return mapData;
-        }).toList();
-        await box.put(map.key, completedData);
+    if (reportDoc.exists) {
+      await Future.forEach<MapEntry<String, dynamic>>(reportDoc.data()!.entries,
+          (element) async {
+        var box = await Hive.openBox(element.key.toString());
+        // var pillMap = Map<String, dynamic>.from(element.value);
+        await box.clear();
+        await Future.forEach<MapEntry<String, dynamic>>(element.value.entries,
+            (map) async {
+          var completedData = map.value
+              .toString()
+              .replaceAll('[', '')
+              .replaceAll(']', '')
+              .replaceAll('{', '')
+              .replaceAll('}', '')
+              .split(',')
+              .map<Map<String, String>>((e) {
+            var data = e.split(':');
+            Map<String, String> mapData = {};
+            mapData[data[0]] = data[1];
+            return mapData;
+          }).toList();
+          await box.put(map.key, completedData);
+        });
       });
-    });
+    }
   }
 
   Future<void> scheduleTimings(Schedule schedule) async {
@@ -303,6 +308,30 @@ class ScheduleController extends GetxController {
     }
   }
 
+  Future<List<int>> getCompletedAmountPerPillPatient(
+      String pillName,
+      DateTime startDate,
+      DateTime endDate,
+      String userId,
+      Map<String, dynamic> data) async {
+    Duration diffDays = startDate.difference(endDate);
+    DateTime date = startDate;
+    List<int> completed = [];
+    for (int i = 0; i < diffDays.inDays * -1; i++) {
+      date = date.add(const Duration(days: 1));
+      Map dayData = data[formatDateToStr(date) + userId] ?? {};
+      int totalCompleted = 0;
+      var completedStr = dayData[pillName].toString();
+      if (completedStr != 'null') {
+        var completedLength = completedStr.split(',').length;
+        totalCompleted = completedLength;
+      }
+
+      completed.add(totalCompleted);
+    }
+    return completed;
+  }
+
   Future<List<int>> getCompletedAmountPerPill(String pillName,
       DateTime startDate, DateTime endDate, String userId) async {
     Duration diffDays = startDate.difference(endDate);
@@ -366,11 +395,13 @@ class ScheduleController extends GetxController {
     if (appointment.message != null && appointment.message!.isNotEmpty) {
       message = appointment.message!;
     }
+    var apptDate = tz.TZDateTime.now(tz.local).add(Duration(minutes: diffMins));
+    apptDate = apptDate.subtract(Duration(seconds: apptDate.second));
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id++,
       "${appointment.name} Appointment",
       message,
-      tz.TZDateTime.now(tz.local).add(Duration(minutes: diffMins)),
+      apptDate,
       const NotificationDetails(
           android: AndroidNotificationDetails('daily notification channel id',
               'daily notification channel name',
@@ -388,8 +419,14 @@ class ScheduleController extends GetxController {
 
   Future<void> fetchAppointmentsData(String userId) async {
     List<Appointment> appts = await fetchAppointmentsOnline(userId);
+    appts.removeWhere(
+        (element) => element.apptDateTime?.isBefore(DateTime.now()) ?? true);
     for (var appt in appts) {
       await scheduleAppointmentAlarm(appt);
+    }
+    var notifications = await getAllPendingNotifications();
+    for (var notification in notifications) {
+      print("${notification.title} ${notification.body} ${notification.id}");
     }
   }
 
