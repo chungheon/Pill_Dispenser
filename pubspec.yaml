@@ -50,6 +50,7 @@ dependencies:
   fl_chart: ^0.60.0
   google_sign_in: ^5.4.4
   table_calendar: ^3.0.8
+  cloud_functions: ^4.0.12
 
 dev_dependencies:
   flutter_test:
