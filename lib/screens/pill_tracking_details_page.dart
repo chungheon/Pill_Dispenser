@@ -388,26 +388,10 @@ class PillTrackingDetailsPage extends StatelessWidget {
                           blurRadius: 10.0,
                           offset: const Offset(0, 2.0))
                     ]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      scheduleList[index].pill?.pill ?? '',
-                      style: const TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.w600),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Get.to(() => ReschedulerPage(scheduleList[index]))
-                            ?.then((value) => updateSchedule());
-                      },
-                      child: const Icon(
-                        Icons.settings,
-                        size: 40.0,
-                        color: Constants.grey,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  scheduleList[index].pill?.pill ?? '',
+                  style: const TextStyle(
+                      fontSize: 20.0, fontWeight: FontWeight.w600),
                 ),
               ),
               Container(
@@ -425,7 +409,7 @@ class PillTrackingDetailsPage extends StatelessWidget {
                           schedules[index].scheduledTimes[timeIndex];
                       bool isCompleted = completedList
                           .where((element) =>
-                              element.keys.first ==
+                              int.tryParse(element.keys.first.toString()) ==
                               scheduledTime.millisecondsSinceEpoch)
                           .isNotEmpty;
                       bool isSkipped = _scheduleController.compareTime(
@@ -448,7 +432,9 @@ class PillTrackingDetailsPage extends StatelessWidget {
                           width: 100.0,
                           margin: const EdgeInsets.only(right: 15.0),
                           decoration: BoxDecoration(
-                              color: Constants.white,
+                              color: isCompleted
+                                  ? Constants.primary.withOpacity(0.5)
+                                  : Constants.white,
                               borderRadius: BorderRadius.circular(15.0),
                               boxShadow: [
                                 BoxShadow(
@@ -493,9 +479,7 @@ class PillTrackingDetailsPage extends StatelessWidget {
     completed.value = await _scheduleController
         .getCurrDayData(_userStateController.user.value?.uid ?? "ERROR");
     completed.forEach((key, value) {
-      if (value.runtimeType == List) {
-        completedIntake.value += (value as List).length;
-      }
+      completedIntake.value += (value as List).length;
     });
     var schedules = _scheduleController.formatToScheduleList(data);
     totalIntake.value = 0;

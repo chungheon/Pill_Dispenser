@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/screens/forget_password_page.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
@@ -11,6 +12,7 @@ class GuardianRequestsListPage extends StatelessWidget {
 
   final UserStateController _userStateController =
       Get.find<UserStateController>();
+  final RxBool isLoading = false.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -69,24 +71,32 @@ class GuardianRequestsListPage extends StatelessWidget {
                     ),
                     GestureDetector(
                         onLongPress: () async {
-                          bool result =
-                              await _userStateController.acceptGuardian(
-                            data["email"] ?? 'ERROR',
-                            data['users_id'] ?? 'ERROR',
-                            false,
-                          );
-                          if (result) {
-                            _userStateController.requests
-                                .remove(keys.elementAt(index));
-                            showDialog(
-                                context: context,
-                                builder: (dContext) {
-                                  return const DefaultDialog(
-                                    title: 'Successfully REJECTED',
-                                    message:
-                                        'You have rejected the user\'s request',
-                                  );
-                                });
+                          if (!isLoading.value) {
+                            isLoading.value = true;
+                            bool result = await LoadingDialog.showLoadingDialog(
+                                _userStateController.acceptGuardian(
+                                  data["email"] ?? 'ERROR',
+                                  data['users_id'] ?? 'ERROR',
+                                  false,
+                                ),
+                                context, () {
+                              return ModalRoute.of(context)?.isCurrent != true;
+                            });
+                            if (result) {
+                              _userStateController.requests
+                                  .remove(keys.elementAt(index));
+                              showDialog(
+                                  context: context,
+                                  builder: (dContext) {
+                                    return const DefaultDialog(
+                                      title: 'Successfully REJECTED',
+                                      message:
+                                          'You have rejected the user\'s request',
+                                    );
+                                  });
+                              _userStateController.updateRelationships();
+                              isLoading.value = false;
+                            }
                           }
                         },
                         child: const Center(
@@ -97,24 +107,32 @@ class GuardianRequestsListPage extends StatelessWidget {
                         ))),
                     GestureDetector(
                         onTap: () async {
-                          bool result =
-                              await _userStateController.acceptGuardian(
-                            data["email"] ?? 'ERROR',
-                            data['users_id'] ?? 'ERROR',
-                            true,
-                          );
-                          if (result) {
-                            _userStateController.requests
-                                .remove(keys.elementAt(index));
-                            showDialog(
-                                context: context,
-                                builder: (dContext) {
-                                  return const DefaultDialog(
-                                    title: 'Successfully Accepted',
-                                    message:
-                                        'You have accepted the user\'s request',
-                                  );
-                                });
+                          if (!isLoading.value) {
+                            isLoading.value = true;
+                            bool result = await LoadingDialog.showLoadingDialog(
+                                _userStateController.acceptGuardian(
+                                  data["email"] ?? 'ERROR',
+                                  data['users_id'] ?? 'ERROR',
+                                  true,
+                                ),
+                                context, () {
+                              return ModalRoute.of(context)?.isCurrent != true;
+                            });
+                            if (result) {
+                              _userStateController.requests
+                                  .remove(keys.elementAt(index));
+                              showDialog(
+                                  context: context,
+                                  builder: (dContext) {
+                                    return const DefaultDialog(
+                                      title: 'Successfully Accepted',
+                                      message:
+                                          'You have accepted the user\'s request',
+                                    );
+                                  });
+                              _userStateController.updateRelationships();
+                              isLoading.value = false;
+                            }
                           }
                         },
                         child: const Center(

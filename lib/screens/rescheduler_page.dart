@@ -7,15 +7,19 @@ import 'package:pill_dispenser/models/pill.dart';
 import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/number_selector_widget.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 import 'package:pill_dispenser/widgets/time_spinner_dialog.dart';
 
+import 'forget_password_page.dart';
+
 class ReschedulerPage extends StatelessWidget {
   ReschedulerPage(
     this.currSchedule, {
     Key? key,
+    this.patientData,
   }) : super(key: key) {
     name.value = this.currSchedule.pill?.pill ?? '';
     pills.value = this.currSchedule.pill?.amount ?? 1;
@@ -34,6 +38,7 @@ class ReschedulerPage extends StatelessWidget {
   final RxBool isLoading = false.obs;
   final RxList<String> error = RxList<String>();
   final Schedule currSchedule;
+  final Map<String, dynamic>? patientData;
 
   Pill _createPill() {
     return Pill(
@@ -44,18 +49,35 @@ class ReschedulerPage extends StatelessWidget {
     );
   }
 
-  Future<void> _reschedulePill() async {
-    Pill pill = _createPill();
-    Schedule schedule = Schedule(
-      scheduledTimes: timings,
-      pill: pill,
-    );
-    await _scheduleController.updateSchedule(
-      schedule,
-      _userStateController.user.value?.uid ?? "ERROR",
-    );
-    await _scheduleController.storeScheduleData(
-        schedule, _userStateController.user.value?.uid ?? '');
+  Future<bool> _reschedulePill() async {
+    if (patientData != null) {
+      bool result = await _scheduleController.schedulePillForPatient(
+          name.value,
+          pills.value,
+          dailyDosage.value,
+          type.value,
+          timings.map((e) => e.millisecondsSinceEpoch).toList(),
+          patientData!['email'] ?? '',
+          patientData!['users_id'] ?? '');
+      if (result) {
+        await _userStateController.fetchAllPatientsData(refreshSchedule: true);
+        _userStateController.patient.refresh();
+      }
+      return result;
+    } else {
+      Pill pill = _createPill();
+      Schedule schedule = Schedule(
+        scheduledTimes: timings,
+        pill: pill,
+      );
+      await _scheduleController.updateSchedule(
+        schedule,
+        _userStateController.user.value?.uid ?? "ERROR",
+      );
+      await _scheduleController.storeScheduleData(
+          schedule, _userStateController.user.value?.uid ?? '');
+      return true;
+    }
   }
 
   @override
@@ -64,6 +86,16 @@ class ReschedulerPage extends StatelessWidget {
         appBar: const StandardAppBar().appBar(),
         child: Column(
           children: [
+            const SizedBox(height: 15.0),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Patient: ${patientData?["name"] ?? ""} ${patientData?["email"] ?? ""}',
+                style: const TextStyle(
+                    fontSize: 20.0, fontWeight: FontWeight.w500),
+              ),
+            ),
             const SizedBox(height: 15.0),
             Expanded(
                 child: ScrollConfiguration(
@@ -332,20 +364,26 @@ class ReschedulerPage extends StatelessWidget {
                           onTap: () async {
                             //SAVE everything
                             if (!isLoading.value && error.isEmpty) {
-                              isLoading.value = true;
-                              _reschedulePill();
-                              // _scheduleController
-                              //     .getAllPendingNotifications()
-                              //     .then((value) {
-                              //   if (value.isEmpty) {
-                              //     print('No Schedule');
-                              //   }
-                              //   for (var val in value) {
-                              //     print(
-                              //         'id:${val.id}, title:${val.title}, body:${val.body}');
-                              //   }
-                              // });
-                              Get.back();
+                              bool result =
+                                  await LoadingDialog.showLoadingDialog(
+                                      _reschedulePill(), context, () {
+                                return ModalRoute.of(context)?.isCurrent !=
+                                    true;
+                              });
+                              await showDialog(
+                                  context: context,
+                                  builder: (dContext) {
+                                    return DefaultDialog(
+                                        title: result ? 'Success' : 'Failed',
+                                        message: result
+                                            ? 'Successfully updated patient\'s schedule'
+                                            : 'Failed to update patient\'s schedule.\n' +
+                                                'Please try again later.');
+                                  });
+                              if (result) {
+                                Get.back();
+                              }
+                              isLoading.value = false;
                             }
                           }),
                     ),

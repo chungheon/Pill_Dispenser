@@ -5,8 +5,10 @@ import 'package:pill_dispenser/controllers/schedule_controller.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/models/pill.dart';
 import 'package:pill_dispenser/models/schedule.dart';
+import 'package:pill_dispenser/screens/forget_password_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/number_selector_widget.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
@@ -20,6 +22,7 @@ class SchedulerPage extends StatelessWidget {
     int? dosageRec,
     int? typeRec,
     int? defaultHour,
+    this.patientData,
   }) : super(key: key) {
     name.value = medName ?? '';
     pills.value = pillsRec ?? 1;
@@ -41,6 +44,7 @@ class SchedulerPage extends StatelessWidget {
   final RxList<String> error = RxList<String>();
   final String emptyNameMsg = 'Please enter a name';
   final String nameExists = 'Pill exists already';
+  final Map<String, dynamic>? patientData;
 
   Pill _createPill() {
     return Pill(
@@ -51,15 +55,32 @@ class SchedulerPage extends StatelessWidget {
     );
   }
 
-  Future<void> _schedulePills() async {
-    Pill pill = _createPill();
-    Schedule schedule = Schedule(
-      scheduledTimes: timings,
-      pill: pill,
-    );
-    await _scheduleController.scheduleTimings(schedule);
-    await _scheduleController.storeScheduleData(
-        schedule, _userStateController.user.value?.uid ?? '');
+  Future<bool> _schedulePills() async {
+    if (patientData != null) {
+      bool result = await _scheduleController.schedulePillForPatient(
+          name.value,
+          pills.value,
+          dailyDosage.value,
+          type.value,
+          timings.map((e) => e.millisecondsSinceEpoch).toList(),
+          patientData!['email'] ?? '',
+          patientData!['users_id'] ?? '');
+      if (result) {
+        await _userStateController.fetchAllPatientsData(refreshSchedule: true);
+        _userStateController.patient.refresh();
+      }
+      return result;
+    } else {
+      Pill pill = _createPill();
+      Schedule schedule = Schedule(
+        scheduledTimes: timings,
+        pill: pill,
+      );
+      await _scheduleController.scheduleTimings(schedule);
+      await _scheduleController.storeScheduleData(
+          schedule, _userStateController.user.value?.uid ?? '');
+      return true;
+    }
   }
 
   bool validateName(String pillName) {
@@ -67,8 +88,16 @@ class SchedulerPage extends StatelessWidget {
     if (name.isEmpty) {
       error.add(emptyNameMsg);
     }
-    if (!_scheduleController.checkIfExists(pillName)) {
-      error.add(nameExists);
+
+    if (patientData != null) {
+      if (!_scheduleController.checkIfExists(pillName,
+          patientData: patientData?['schedule'] ?? {})) {
+        error.add(nameExists);
+      }
+    } else {
+      if (!_scheduleController.checkIfExists(pillName)) {
+        error.add(nameExists);
+      }
     }
 
     return error.isEmpty;
@@ -80,6 +109,16 @@ class SchedulerPage extends StatelessWidget {
         appBar: const StandardAppBar().appBar(),
         child: Column(
           children: [
+            const SizedBox(height: 15.0),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Patient: ${patientData?["name"] ?? ""} ${patientData?["email"] ?? ""}',
+                style: const TextStyle(
+                    fontSize: 20.0, fontWeight: FontWeight.w500),
+              ),
+            ),
             const SizedBox(height: 15.0),
             Expanded(
                 child: ScrollConfiguration(
@@ -382,19 +421,27 @@ class SchedulerPage extends StatelessWidget {
                             //SAVE everything
                             if (!isLoading.value && error.isEmpty) {
                               isLoading.value = true;
-                              await _schedulePills();
-                              // _scheduleController
-                              //     .getAllPendingNotifications()
-                              //     .then((value) {
-                              //   if (value.isEmpty) {
-                              //     print('No Schedule');
-                              //   }
-                              //   for (var val in value) {
-                              //     print(
-                              //         'id:${val.id}, title:${val.title}, body:${val.body}');
-                              //   }
-                              // });
-                              Get.back();
+                              bool result =
+                                  await LoadingDialog.showLoadingDialog(
+                                      _schedulePills(),
+                                      context,
+                                      () =>
+                                          ModalRoute.of(context)?.isCurrent !=
+                                          true);
+                              await showDialog(
+                                  context: context,
+                                  builder: (dContext) {
+                                    return DefaultDialog(
+                                        title: result ? 'Success' : 'Failed',
+                                        message: result
+                                            ? 'Successfully updated patient\'s schedule'
+                                            : 'Failed to update patient\'s schedule.\n' +
+                                                'Please try again later.');
+                                  });
+                              if (result) {
+                                Get.back();
+                              }
+                              isLoading.value = false;
                             }
                           }),
                     ),

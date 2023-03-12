@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -96,6 +95,21 @@ class UserStateController extends GetxController
           email: email, password: password);
     } on FirebaseAuthException catch (e) {
       return Future.error(e);
+    }
+  }
+
+  Future<void> fetchAllPatientsData(
+      {bool refreshSchedule = false, bool refreshReport = false}) async {
+    for (var pIndex = 0; pIndex < patient.length; pIndex++) {
+      if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
+        var pData = await fetchPatientScheduleData(patient[pIndex]);
+        patient[pIndex]['schedule'] = pData;
+      }
+
+      if (!patient[pIndex].keys.contains('report') || refreshReport) {
+        var pReport = await fetchPatientWeeklyReport(patient[pIndex]);
+        patient[pIndex]['report'] = pReport;
+      }
     }
   }
 }

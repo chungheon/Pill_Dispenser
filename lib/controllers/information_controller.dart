@@ -33,9 +33,14 @@ class InformationController extends GetxController {
   }
 
   Future<void> loadData() async {
-    var data = infoBox?.get("info");
+    var data = infoBox?.get("info") ?? {};
     try {
       Map<String, dynamic> pillData = Map<String, dynamic>.from(data);
+      if (pillData.isEmpty) {
+        await downloadPillData();
+      }
+      data = infoBox?.get("info") ?? {};
+      pillData = Map<String, dynamic>.from(data);
       pillsList.value = pillData;
     } catch (e) {
       return;

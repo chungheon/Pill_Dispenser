@@ -23,6 +23,7 @@ class PatientWeeklyReportPage extends StatelessWidget {
   final RxList<int> totalNotificationsPills = <int>[].obs;
   final RxList<String> pillNames = <String>[].obs;
   final Map<String, dynamic> patientDetails;
+  final RxBool isLoading = false.obs;
 
   LineTouchData get lineTouchData1 => LineTouchData(
         handleBuiltInTouches: true,
@@ -119,10 +120,9 @@ class PatientWeeklyReportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(((timeStamp) async {
       DateTime now = DateTime.now();
-      var scheduleData =
-          await _userStateController.fetchPatientScheduleData(patientDetails);
-      var reportData =
-          await _userStateController.fetchPatientWeeklyReport(patientDetails);
+      isLoading.value = true;
+      var scheduleData = patientDetails['schedule'];
+      var reportData = patientDetails['report'];
       pillCompletedValues.clear();
       highestValue.clear();
       totalNotificationsPills.clear();
@@ -141,63 +141,74 @@ class PatientWeeklyReportPage extends StatelessWidget {
           pillNames.add(key);
         },
       );
+      isLoading.value = false;
       // completedValues.value = completed;
       // highestValue.value = completed.reduce(max) + 1;
       // totalNotifications.value = total;
     }));
     return StandardScaffold(
         appBar: const StandardAppBar().appBar(),
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 20.0,
-            ),
-            const Center(
-              child: Text('Last 7 Days Completion',
-                  style:
-                      TextStyle(fontSize: 25.0, fontWeight: FontWeight.w500)),
-            ),
-            Expanded(
-              child: Obx(() {
-                return ListView.builder(
-                    itemCount: pillCompletedValues.length,
-                    itemBuilder: ((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Pill: ${pillNames[index]}',
-                              style: const TextStyle(
-                                  fontSize: 20.0, fontWeight: FontWeight.w500),
-                            ),
-                            Container(
-                              width: Get.width,
-                              height: Get.width * 0.8,
-                              padding:
-                                  const EdgeInsets.only(right: 15.0, top: 15.0),
-                              child: LineChart(
-                                getLineChartData(
-                                    pillCompletedValues[index], index),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            Center(
-                              child: Text(
-                                  'Total Notifications Per Day: ${totalNotificationsPills[index].toString()}',
+        child: Obx(
+          () {
+            if (isLoading.value) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            return Column(
+              children: [
+                const SizedBox(
+                  height: 20.0,
+                ),
+                const Center(
+                  child: Text('Last 7 Days Completion',
+                      style: TextStyle(
+                          fontSize: 25.0, fontWeight: FontWeight.w500)),
+                ),
+                Expanded(
+                  child: Obx(() {
+                    return ListView.builder(
+                        itemCount: pillCompletedValues.length,
+                        itemBuilder: ((context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Pill: ${pillNames[index]}',
                                   style: const TextStyle(
                                       fontSize: 20.0,
-                                      fontWeight: FontWeight.w500)),
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                Container(
+                                  width: Get.width,
+                                  height: Get.width * 0.8,
+                                  padding: const EdgeInsets.only(
+                                      right: 15.0, top: 15.0),
+                                  child: LineChart(
+                                    getLineChartData(
+                                        pillCompletedValues[index], index),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 15.0,
+                                ),
+                                Center(
+                                  child: Text(
+                                      'Total Notifications Per Day: ${totalNotificationsPills[index].toString()}',
+                                      style: const TextStyle(
+                                          fontSize: 20.0,
+                                          fontWeight: FontWeight.w500)),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    }));
-              }),
-            ),
-          ],
+                          );
+                        }));
+                  }),
+                ),
+              ],
+            );
+          },
         ));
   }
 

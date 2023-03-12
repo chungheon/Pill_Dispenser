@@ -13,9 +13,11 @@ import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
 import 'package:pill_dispenser/screens/schedule_appointment_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
+import 'package:pill_dispenser/screens/select_patient_page.dart';
 import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:pill_dispenser/screens/weekly_report_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
 class HomePage extends StatelessWidget {
@@ -198,7 +200,6 @@ class _UserHomePageState extends State<UserHomePage>
 
     completed.value = await _scheduleController
         .getCurrDayData(_userStateController.user.value?.uid ?? "ERROR");
-    print(completed.value);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       Future.delayed(const Duration(milliseconds: 300))
           .then((time) => setState(() {}));
@@ -448,7 +449,7 @@ class _UserHomePageState extends State<UserHomePage>
                 child: Column(children: [
                   CustomSplashButton(
                     title: 'Information on Pills',
-                    onTap: () {
+                    onTap: () async {
                       Get.to(() => PillsInformationPage());
                     },
                     padding: const EdgeInsets.symmetric(vertical: 15.0),
@@ -460,26 +461,6 @@ class _UserHomePageState extends State<UserHomePage>
                     title: 'Tracker',
                     onTap: () {
                       Get.to(() => PillTrackingDetailsPage());
-                    },
-                    padding: const EdgeInsets.symmetric(vertical: 15.0),
-                  ),
-                  const SizedBox(
-                    height: 20.0,
-                  ),
-                  CustomSplashButton(
-                    title: 'QR Code Scan',
-                    onTap: () {
-                      Get.toNamed('/scanner');
-                    },
-                    padding: const EdgeInsets.symmetric(vertical: 15.0),
-                  ),
-                  const SizedBox(
-                    height: 20.0,
-                  ),
-                  CustomSplashButton(
-                    title: 'Scheduling',
-                    onTap: () {
-                      Get.to(() => SchedulerPage());
                     },
                     padding: const EdgeInsets.symmetric(vertical: 15.0),
                   ),
@@ -518,12 +499,22 @@ class _UserHomePageState extends State<UserHomePage>
                   CustomSplashButton(
                     title: 'Weekly Report',
                     onTap: () async {
-                      // Get.to(() => WeeklyReportPage());
-                      Get.to(() => PatientWeeklyReportPage(
-                          _userStateController.patient.first));
+                      Get.to(() => WeeklyReportPage());
                     },
                     padding: const EdgeInsets.symmetric(vertical: 15.0),
                   ),
+                  const SizedBox(
+                    height: 20.0,
+                  ),
+                  Obx(() {
+                    if (_userStateController.patient.isNotEmpty) {
+                      return CustomSplashButton(
+                          title: 'Patients',
+                          onTap: () => Get.to(SelectPatientPage()));
+                    } else {
+                      return Container();
+                    }
+                  }),
                   const SizedBox(
                     height: 20.0,
                   ),

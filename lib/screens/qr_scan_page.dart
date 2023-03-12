@@ -9,8 +9,12 @@ import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class QrScanPage extends StatefulWidget {
-  QrScanPage({Key? key}) : super(key: key);
+  QrScanPage({
+    Key? key,
+    this.patientData,
+  }) : super(key: key);
 
+  final Map<String, dynamic>? patientData;
   @override
   State<QrScanPage> createState() => _QrScanPageState();
 }
@@ -77,6 +81,7 @@ class _QrScanPageState extends State<QrScanPage> {
                         pillsRec: int.tryParse(values[1] ?? ''),
                         dosageRec: int.tryParse(values[2] ?? ''),
                         typeRec: int.tryParse(values[3] ?? ''),
+                        patientData: widget.patientData,
                       ));
                 }
               },

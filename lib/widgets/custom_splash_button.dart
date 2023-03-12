@@ -41,6 +41,7 @@ class CustomSplashButton extends StatelessWidget {
                   height: 22.0, width: 22.0, child: CircularProgressIndicator())
               : Text(
                   title ?? '',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 22.0,
                       fontWeight: FontWeight.w700,

@@ -12,7 +12,6 @@ class PatientInfoMixin {
       'patientUid': patientDetails['users_id'],
     });
     final data = result.data;
-    print(data['data']);
     if (data['code'] == 200) {
       return Map<String, dynamic>.from(data['data']);
     }
@@ -27,7 +26,6 @@ class PatientInfoMixin {
       'patientUid': patientDetails['users_id'],
     });
     final data = result.data;
-    print(data['data']);
     if (data['code'] == 200) {
       return Map<String, dynamic>.from(data['data']);
     }

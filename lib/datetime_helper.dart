@@ -20,4 +20,9 @@ class DateTimeHelper {
     }
     return formattedDate;
   }
+
+  static String formatDateToStrTime(DateTime date) {
+    String formattedDate = DateFormat('HH:mm').format(date);
+    return formattedDate;
+  }
 }

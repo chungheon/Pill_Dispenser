@@ -7,6 +7,7 @@ class UserInfoMixin {
   final RxString displayName = RxString('');
   final RxString contactDetails = RxString('');
   final Rxn<DateTime> birthday = Rxn<DateTime>();
+  final RxList<String> allergies = RxList<String>();
   final Rxn<User> user = Rxn<User>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -23,6 +24,25 @@ class UserInfoMixin {
     birthday.value = null;
     patient.clear();
     guardian.clear();
+  }
+
+  Future<bool> addAllergy(String allergyName) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      try {
+        await _firestore.collection('users_list').doc(user.email).set(
+          {
+            'allergies': {allergyName: 'true'},
+          },
+          SetOptions(merge: true),
+        ).onError((error, stackTrace) => throw Exception(error));
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
   }
 
   Future<bool> updateDisplayName(String name) async {
@@ -67,12 +87,41 @@ class UserInfoMixin {
     return Future.error(data['message'] ?? '');
   }
 
-  Future<void> fetchUserDetails() async {
+  Future<void> updateRelationships() async {
+    await fetchRelationships().then((relationships) {
+      var guardians = relationships['guardians'];
+      var patients = relationships['patients'];
+      patient.clear();
+      guardian.clear();
+      for (var key in guardians.keys) {
+        var data = guardians[key];
+        guardian.add(Map<String, dynamic>.from(data));
+      }
+
+      for (var key in patients.keys) {
+        var data = patients[key];
+        if (data == 'pending') {
+          patient.add({key: 'pending'});
+        } else {
+          patient.add(Map<String, dynamic>.from(data));
+        }
+      }
+    });
+  }
+
+  Future<void> fetchUserDetailsOnline() async {
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
       var userRef = _firestore.collection('users_list').doc(user.email);
       var userDoc = await userRef.get();
       updateDetailsFromMap(userDoc.data() ?? {});
+    }
+  }
+
+  Future<void> fetchUserDetails() async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await fetchUserDetailsOnline();
       fetchRelationships().then((relationships) {
         var guardians = relationships['guardians'];
         var patients = relationships['patients'];
@@ -106,6 +155,14 @@ class UserInfoMixin {
         : DateTime.fromMillisecondsSinceEpoch(userMap['birthday']);
     contactDetails.value = userMap['contact_details'] ?? '';
     displayName.value = userMap['name'] ?? '';
+    var allergiesData = Map<String, dynamic>.from(userMap['allergies'] ?? {});
+    allergies.clear();
+    for (var key in allergiesData.keys) {
+      if (allergiesData[key] == 'true') {
+        allergies.add(key);
+      }
+    }
+    allergies.refresh();
   }
 
   Future<bool> reqGuardian(String email) async {
@@ -131,10 +188,8 @@ class UserInfoMixin {
     }));
     final data = Map<String, dynamic>.from(result.data);
     if ((data['code'] ?? 400) == 200) {
-      print(data);
       return true;
     }
-    print(data);
     return false;
   }
 
@@ -148,7 +203,7 @@ class UserInfoMixin {
     if (user != null) {
       try {
         await _firestore.collection('users_list').doc(user.email).set({
-          'contactDetails': contact,
+          'contact_details': contact,
           'birthday': bday?.millisecondsSinceEpoch,
           'name': name,
         }, SetOptions(merge: true)).onError(

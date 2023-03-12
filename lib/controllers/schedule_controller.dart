@@ -1,29 +1,23 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:pill_dispenser/controllers/patient_schedule_mixin.dart';
 import 'package:pill_dispenser/main.dart';
 import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-class ScheduleController extends GetxController {
+class ScheduleController extends GetxController with PatientSchedulerMixin {
   int id = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   bool permission = false;
   Box? scheduleBox;
   Box? pillBox;
-
-  @override
-  void onInit() async {
-    super.onInit();
-  }
 
   Future<List<PendingNotificationRequest>> getAllPendingNotifications() {
     return flutterLocalNotificationsPlugin.pendingNotificationRequests();
@@ -180,11 +174,18 @@ class ScheduleController extends GetxController {
     }
   }
 
-  bool checkIfExists(String pillName) {
-    if (pillName.isNotEmpty) {
-      return scheduleBox?.get(pillName.trim()) == null;
+  bool checkIfExists(String pillName, {Map<String, dynamic>? patientData}) {
+    if (patientData != null) {
+      if (pillName.trim().isNotEmpty) {
+        return patientData[pillName] == null;
+      }
+      return true;
+    } else {
+      if (pillName.trim().isNotEmpty) {
+        return scheduleBox?.get(pillName.trim()) == null;
+      }
+      return true;
     }
-    return true;
   }
 
   Future<void> updateSchedule(Schedule schedule, String userId) async {
@@ -424,10 +425,10 @@ class ScheduleController extends GetxController {
     for (var appt in appts) {
       await scheduleAppointmentAlarm(appt);
     }
-    var notifications = await getAllPendingNotifications();
-    for (var notification in notifications) {
-      print("${notification.title} ${notification.body} ${notification.id}");
-    }
+    // var notifications = await getAllPendingNotifications();
+    // for (var notification in notifications) {
+    //   print("${notification.title} ${notification.body} ${notification.id}");
+    // }
   }
 
   Future<List<Appointment>> fetchAppointmentsOnline(String userId) async {

@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/datetime_helper.dart';
+import 'package:pill_dispenser/screens/add_allergies_page.dart';
 import 'package:pill_dispenser/screens/guardian_request_page.dart';
+import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
@@ -198,15 +200,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       const SizedBox(
         height: 10.0,
       ),
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: CustomSplashButton(
-          title: 'Request as Guardian',
-          onTap: () {
-            Get.to(() => GuardianRequestPage());
-          },
-        ),
-      ),
     ];
   }
 
@@ -260,6 +253,18 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       const SizedBox(
         height: 10.0,
       ),
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: CustomSplashButton(
+          title: 'Add Allergy',
+          onTap: () {
+            Get.to(() => AddAllergiesPage());
+          },
+        ),
+      ),
+      const SizedBox(
+        height: 10.0,
+      ),
       Obx(() {
         if (_userStateController.patient.isEmpty) {
           return Container();
@@ -284,13 +289,15 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 itemBuilder: ((context, index) {
                   var data = _userStateController.patient[index];
                   bool isPending = !data.containsKey('name');
-                  String name = data.toString();
 
-                  return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 35.0),
+                  return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: isPending
-                          ? Text('isPending')
-                          : _buildRelationDisplay(data));
+                          ? _buildPendingDisplay(data)
+                          : _buildRelationDisplay(
+                              data,
+                              () =>
+                                  Get.to(() => PatientWeeklyReportPage(data))));
                 })),
           ],
         );
@@ -312,20 +319,66 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 style: TextStyle(fontSize: 20.0),
               ),
             ),
+            const SizedBox(
+              height: 10.0,
+            ),
             ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _userStateController.guardian.length,
                 itemBuilder: ((context, index) {
-                  return Text(_userStateController.guardian[index].toString());
+                  var data = _userStateController.guardian[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: _buildRelationDisplay(data, () {}),
+                  );
                 })),
           ],
         );
       }),
+      const SizedBox(
+        height: 10.0,
+      ),
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.0),
+        child: Text(
+          'Allergies',
+          style: TextStyle(fontSize: 20.0),
+        ),
+      ),
+      const SizedBox(
+        height: 10.0,
+      ),
+      Obx(
+        () {
+          if (_userStateController.allergies.isEmpty) {
+            return Container(
+              alignment: Alignment.center,
+              child: const Text(
+                'No Allergies',
+                style: TextStyle(fontSize: 20.0),
+              ),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _userStateController.allergies.length,
+            itemBuilder: ((context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildAllergyInformation(
+                  _userStateController.allergies[index],
+                ),
+              );
+            }),
+          );
+        },
+      ),
     ];
   }
 
-  Widget _buildRelationDisplay(Map<String, dynamic> data) {
+  Widget _buildPendingDisplay(Map<String, dynamic> data) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
       decoration: BoxDecoration(
@@ -339,18 +392,50 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Name: ${data["name"]}',
+            'Email: ${data.keys.first}',
             style: const TextStyle(fontSize: 17.0),
           ),
-          Text(
-            'Email: ${data["email"]}',
-            style: const TextStyle(fontSize: 17.0),
-          ),
-          Text(
-            'Contact Details: ${data["contact_details"]}',
-            style: const TextStyle(fontSize: 17.0),
-          ),
+          const Text(
+            'Waiting for user to accept',
+            style: TextStyle(fontSize: 17.0),
+          )
         ],
+      ),
+    );
+  }
+
+  Widget _buildRelationDisplay(Map<String, dynamic> data, Function() onTap) {
+    return GestureDetector(
+      onTap: () {
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+        decoration: BoxDecoration(
+          color: Constants.white,
+          borderRadius: BorderRadius.circular(15.0),
+          boxShadow: [
+            BoxShadow(
+                color: Constants.black.withOpacity(0.2), blurRadius: 10.0),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Name: ${data["name"]}',
+              style: const TextStyle(fontSize: 17.0),
+            ),
+            Text(
+              'Email: ${data["email"]}',
+              style: const TextStyle(fontSize: 17.0),
+            ),
+            Text(
+              'Contact Details: ${data["contact_details"]}',
+              style: const TextStyle(fontSize: 17.0),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -446,7 +531,24 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     );
   }
 
-  Widget _buildInformationDisplay(String title, String information) {
+  Widget _buildAllergyInformation(String information) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+      decoration: BoxDecoration(
+          color: Constants.white,
+          border: Border.all(color: Constants.black, width: 1.0)),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        information,
+        style: const TextStyle(fontSize: 17.0),
+      ),
+    );
+  }
+
+  Widget _buildInformationDisplay(
+    String title,
+    String information,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
