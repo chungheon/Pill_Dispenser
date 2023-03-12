@@ -196,6 +196,7 @@ exports.schedulePatientPill = functions.region('asia-east2').https.onCall(async 
                 'scheduledTimes': scheduledTimes
             }
         }, {merge : true});
+        var doc = await scheduleRef.get();
         return { 'status': 'success', 'code': 200, 'data': doc.data() };
     } else {
         return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
