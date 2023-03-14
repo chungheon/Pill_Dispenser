@@ -51,6 +51,7 @@ a {
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
     text-decoration: none !important;
     -webkit-transition: all .2s linear;
+    transition: all .2s linear;
     width: 100%;
 }
 
@@ -74,10 +75,10 @@ a:hover {
                 </RouterLink>
             </div>
             <div class="option">
-                <RouterLink to="/">View Weekly Report</RouterLink>
+                <RouterLink :to="{ name: 'weeklyreport', params: { patientEmail: patientData['email'] } }">View Weekly Report</RouterLink>
             </div>
             <div class="option">
-                <RouterLink to="/">Add Pill Information</RouterLink>
+                <RouterLink :to="{ name: 'pillinformation', params: { patientEmail: patientData['email'] } }">Add Pill Information</RouterLink>
             </div>
 
         </div>

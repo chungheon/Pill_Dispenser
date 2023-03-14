@@ -56,7 +56,6 @@ export default {
             });
         }
       }
-
     },
     async fetchPillInfo() {
       const pillInfo = httpsCallable(functions, 'fetchPatientPillInformation');
@@ -69,7 +68,6 @@ export default {
             });
         }
       }
-
     },
   }
 }

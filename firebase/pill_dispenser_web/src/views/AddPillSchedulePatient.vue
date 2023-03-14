@@ -6,7 +6,6 @@ import TextFormField from '../components/TextFormField.vue';
 import CustomDialog from '../components/DialogForm.vue';
 import { httpsCallable } from '@firebase/functions';
 import { functions } from '../FirebaseConfig';
-import { routerKey } from 'vue-router';
 </script>
 
 <script>
@@ -38,8 +37,8 @@ export default {
     beforeMount() {
         var patientEmail = this.$route?.params['patientEmail'];
         this.patientData = state.patients[patientEmail];
-        if(this.patientData == null){
-            this.$router.push({name: 'notfound'});
+        if (this.patientData == null) {
+            this.$router.push({ name: 'notfound' });
         }
         if (this.timingsList.length == 0) {
             let currTime = new Date;
@@ -128,13 +127,21 @@ export default {
                 };
             }
         },
+        async fetchScheduleData() {
+            const scheduleData = httpsCallable(functions, 'fetchPatientSchedule');
+            await scheduleData({ 'patientUid': this.patientData['users_id'] })
+                .then((result) => {
+                    const data = result.data;
+                    state.patients[this.patientData['email']]['schedule'] = data['data'];
+                });
+        },
         async schedulePillForPatient(pillData) {
             this.customDialogTitle = 'Scheduleing Pill!';
             this.customDialogText = 'Please wait while pill is scheduled!';
             this.customDialogVisible = true;
             const schedulePatientPill = httpsCallable(functions, 'schedulePatientPill');
             schedulePatientPill(pillData)
-                .then((result) => {
+                .then(async (result) => {
                     const data = result.data;
                     if (data['code'] != 200) {
                         this.customDialogTitle = 'Unable to schedule pill';
@@ -147,7 +154,8 @@ export default {
                         };
                         this.customDialogVisible = true;
                     } else {
-                        this.customDialogTitle = 'Pill Scheduled!';
+                        await this.fetchScheduleData(),
+                            this.customDialogTitle = 'Pill Scheduled!';
                         this.customDialogText = 'Pill has been scheduled!';
                         this.customDialogConfirmed = () => {
                             this.$router.back();
@@ -229,10 +237,10 @@ main {
 </style>
 
 <template>
-    <main>
+    <main v-if="patientData != null">
         <section class="patient_details">
-            <TextDetails class="details" label="Patient's Name" :modelValue="patientData['name'] ?? ''" />
-            <TextDetails class="details" label="Contact" :modelValue="patientData['contact_details'] ?? ''" />
+            <TextDetails class="details" label="Patient's Name" :modelValue="patientData['name']" />
+            <TextDetails class="details" label="Contact" :modelValue="patientData['contact_details']" />
         </section>
         <section id="schedule_timings">
             <TextFormField label="Name" v-model="name" hint="Enter pill name" width="100%" />

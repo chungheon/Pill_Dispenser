@@ -4,6 +4,8 @@ import router from './router'
 
 import './assets/main.css';
 
+import VueApexCharts from 'vue3-apexcharts';
+
 
 /* import the fontawesome core */
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -19,5 +21,6 @@ library.add(faPlus, faMinus);
 
 createApp(App)
 .use(router)
+.use(VueApexCharts)
 .component('font-awesome-icon', FontAwesomeIcon)
 .mount('#app')
