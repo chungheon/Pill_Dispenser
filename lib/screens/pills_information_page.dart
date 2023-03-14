@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/information_controller.dart';
+import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/main.dart';
 import 'package:pill_dispenser/screens/login_home_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
@@ -9,16 +10,21 @@ import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
 class PillsInformationPage extends StatelessWidget {
-  PillsInformationPage({Key? key}) : super(key: key);
+  PillsInformationPage({Key? key}) : super(key: key) {
+    onTapRefresh();
+  }
   final InformationController _informationController =
       Get.find<InformationController>();
+  final UserStateController _userStateController =
+      Get.find<UserStateController>();
   final isLoading = false.obs;
   final RxString searchTerm = ''.obs;
 
   Future<void> onTapRefresh() async {
     if (!isLoading.value) {
       isLoading.value = true;
-      await _informationController.downloadPillData();
+      await _informationController
+          .downloadPillData(_userStateController.user.value?.uid ?? '');
       isLoading.value = false;
     }
   }

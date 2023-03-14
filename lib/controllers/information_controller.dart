@@ -6,13 +6,6 @@ class InformationController extends GetxController {
   final RxMap<String, dynamic> pillsList = <String, dynamic>{}.obs;
   final RxMap<String, dynamic> searchList = <String, dynamic>{}.obs;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  Box? infoBox;
-
-  @override
-  void onReady() async {
-    infoBox = await Hive.openBox('information');
-    await loadData();
-  }
 
   void searchTerm(String searchTerm) {
     searchList.clear();
@@ -22,28 +15,12 @@ class InformationController extends GetxController {
     });
   }
 
-  Future<void> downloadPillData() async {
+  Future<void> downloadPillData(String userID) async {
     final DocumentReference docRef =
-        _firestore.collection('information').doc('pills');
+        _firestore.collection('information').doc(userID);
     final DocumentSnapshot docs = await docRef.get();
     if (docs.exists) {
-      infoBox?.put("info", docs.data());
-      await loadData();
-    }
-  }
-
-  Future<void> loadData() async {
-    var data = infoBox?.get("info") ?? {};
-    try {
-      Map<String, dynamic> pillData = Map<String, dynamic>.from(data);
-      if (pillData.isEmpty) {
-        await downloadPillData();
-      }
-      data = infoBox?.get("info") ?? {};
-      pillData = Map<String, dynamic>.from(data);
-      pillsList.value = pillData;
-    } catch (e) {
-      return;
+      pillsList.value = Map<String, dynamic>.from((docs.data() ?? {}) as Map);
     }
   }
 }

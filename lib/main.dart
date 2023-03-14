@@ -234,7 +234,12 @@ class MyApp extends StatelessWidget {
             ResponsiveBreakpoint.resize(1000, name: DESKTOP),
           ],
           background: Container(color: const Color(0xFFF5F5F5)),
-          child: child),
+          child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+              child: KeyboardAvoider(child: child!))),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashPage(),
@@ -248,19 +253,20 @@ class MyApp extends StatelessWidget {
 class KeyboardAvoider extends StatelessWidget {
   final Widget child;
 
-  const KeyboardAvoider({required this.child});
+  const KeyboardAvoider({Key? key, required this.child}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    print(MediaQuery.of(context).viewInsets.bottom);
     return AnimatedContainer(
       margin: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom > 0
-            ? (ResponsiveWrapper.of(context).scaledHeight *
+            ? (ResponsiveWrapper.of(context).screenHeight *
                     MediaQuery.of(context).viewInsets.bottom) /
                 ResponsiveWrapper.of(context).screenHeight
             : 0,
       ),
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 100),
       child: child,
     );
   }

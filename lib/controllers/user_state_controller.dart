@@ -3,10 +3,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pill_dispenser/controllers/patient_info_mixin.dart';
+import 'package:pill_dispenser/controllers/pill_information_mixin.dart';
 import 'package:pill_dispenser/controllers/user_info_mixin.dart';
 
 class UserStateController extends GetxController
-    with UserInfoMixin, PatientInfoMixin {
+    with UserInfoMixin, PatientInfoMixin, PillInformationMixin {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -98,8 +99,46 @@ class UserStateController extends GetxController
     }
   }
 
+  Map<String, dynamic> getPatientData(String userUID) {
+    Map<String, dynamic> patientData = {};
+    for (var pIndex = 0; pIndex < patient.length; pIndex++) {
+      if ((patient[pIndex]['users_id'] ?? 'Not Exists') == userUID) {
+        patientData = patient[pIndex];
+        break;
+      }
+    }
+    return patientData;
+  }
+
+  Future<void> fetchPatientData(String userUID,
+      {bool refreshSchedule = false,
+      bool refreshReport = false,
+      bool refreshInfo = false}) async {
+    for (var pIndex = 0; pIndex < patient.length; pIndex++) {
+      if ((patient[pIndex]['users_id'] ?? 'Not Exists') == userUID) {
+        if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
+          var pData = await fetchPatientScheduleData(patient[pIndex]);
+          patient[pIndex]['schedule'] = pData;
+        }
+
+        if (!patient[pIndex].keys.contains('report') || refreshReport) {
+          var pReport = await fetchPatientWeeklyReport(patient[pIndex]);
+          patient[pIndex]['report'] = pReport;
+        }
+
+        if (!patient[pIndex].keys.contains('pill_info') || refreshInfo) {
+          var pPills = await fetchPatientsPillInformation(patient[pIndex]);
+          patient[pIndex]['pill_info'] = pPills;
+        }
+        break;
+      }
+    }
+  }
+
   Future<void> fetchAllPatientsData(
-      {bool refreshSchedule = false, bool refreshReport = false}) async {
+      {bool refreshSchedule = false,
+      bool refreshReport = false,
+      bool refreshInfo = false}) async {
     for (var pIndex = 0; pIndex < patient.length; pIndex++) {
       if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
         var pData = await fetchPatientScheduleData(patient[pIndex]);
@@ -109,6 +148,11 @@ class UserStateController extends GetxController
       if (!patient[pIndex].keys.contains('report') || refreshReport) {
         var pReport = await fetchPatientWeeklyReport(patient[pIndex]);
         patient[pIndex]['report'] = pReport;
+      }
+
+      if (!patient[pIndex].keys.contains('pill_info') || refreshInfo) {
+        var pPills = await fetchPatientsPillInformation(patient[pIndex]);
+        patient[pIndex]['pill_info'] = pPills;
       }
     }
   }

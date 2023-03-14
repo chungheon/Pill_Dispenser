@@ -115,62 +115,68 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     if (isEdit.value) {
       listItems = _writeListItems();
     }
-    return StandardScaffold(
-        child: Column(
-      children: [
-        PreferredSize(
-          preferredSize: const Size(double.infinity, 60.0),
-          child: Obx(() {
-            if (isEdit.value) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+          child: Column(
+        children: [
+          PreferredSize(
+            preferredSize: const Size(double.infinity, 60.0),
+            child: Obx(() {
+              if (isEdit.value) {
+                return StandardAppBar(
+                  action: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: GestureDetector(
+                      onTap: () async {
+                        bool? updateResult = await confirmUpdate(context);
+                        if (updateResult != null) {
+                          if (updateResult) {
+                            await updateDetails();
+                          } else {
+                            name.value = _userStateController.displayName.value;
+                          }
+                          isEdit.value = false;
+                          setState(() {});
+                        }
+                      },
+                      child: const Icon(
+                        Icons.check,
+                        color: Constants.black,
+                        size: 45.0,
+                      ),
+                    ),
+                  ),
+                ).appBar();
+              }
               return StandardAppBar(
                 action: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   child: GestureDetector(
-                    onTap: () async {
-                      bool? updateResult = await confirmUpdate(context);
-                      if (updateResult != null) {
-                        if (updateResult) {
-                          await updateDetails();
-                        } else {
-                          name.value = _userStateController.displayName.value;
-                        }
-                        isEdit.value = false;
-                        setState(() {});
-                      }
+                    onTap: () {
+                      isEdit.value = true;
+                      setState(() {});
                     },
                     child: const Icon(
-                      Icons.check,
+                      Icons.edit,
                       color: Constants.black,
                       size: 45.0,
                     ),
                   ),
                 ),
               ).appBar();
-            }
-            return StandardAppBar(
-              action: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: GestureDetector(
-                  onTap: () {
-                    isEdit.value = true;
-                    setState(() {});
-                  },
-                  child: const Icon(
-                    Icons.edit,
-                    color: Constants.black,
-                    size: 45.0,
-                  ),
-                ),
-              ),
-            ).appBar();
-          }),
-        ),
-        Expanded(
-            child: ListView(
-          children: listItems,
-        )),
-      ],
-    ));
+            }),
+          ),
+          Expanded(
+              child: ListView(
+            children: listItems,
+          )),
+        ],
+      )),
+    );
   }
 
   List<Widget> _writeListItems() {

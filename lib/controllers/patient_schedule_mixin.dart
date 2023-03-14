@@ -1,8 +1,29 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
-class PatientSchedulerMixin {
+class PatientScheduleMixin {
   final FirebaseFunctions _functions =
       FirebaseFunctions.instanceFor(region: 'asia-east2');
+
+  /*
+    var pillName = data.pillName;
+    var pillInfo = data.pillInfo;
+    var patientUID = data.patientUid;
+  */
+  Future<bool> updatePillsInformationForPatient(
+      String pillName, String pillInfo, String patientUID) async {
+    HttpsCallable callable = _functions.httpsCallable('updatePillsInformation');
+    final result = (await callable.call(<String, dynamic>{
+      'pillName': pillName,
+      'pillInfo': pillInfo,
+      'patientUid': patientUID,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+
+    return false;
+  }
 
   /*
     var pillName = data.pillName;
@@ -27,7 +48,6 @@ class PatientSchedulerMixin {
       'pillFrequency': pillFrequency,
       'type': type,
       'scheduledTimes': scheduledTimes,
-      'patientEmail': patientEmail,
       'patientUid': patientUID,
     }));
     final data = Map<String, dynamic>.from(result.data);

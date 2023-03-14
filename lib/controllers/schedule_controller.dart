@@ -11,7 +11,7 @@ import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-class ScheduleController extends GetxController with PatientSchedulerMixin {
+class ScheduleController extends GetxController with PatientScheduleMixin {
   int id = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 

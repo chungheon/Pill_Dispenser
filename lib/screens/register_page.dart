@@ -100,7 +100,7 @@ class RegisterPage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(
-                  height: 20.0,
+                  height: 300.0,
                 ),
                 const Center(
                   child: Text(

@@ -17,50 +17,56 @@ class GuardianRequestPage extends StatelessWidget {
   final RxBool isLoading = false.obs;
   @override
   Widget build(BuildContext context) {
-    return StandardScaffold(
-      appBar: const StandardAppBar().appBar(),
-      child: Column(
-        children: [
-          _buildEditInformationDisplay(
-              'Patient Email', patientEmail, 'Enter Patient\'s Email'),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
-            child: Obx(
-              () => CustomSplashButton(
-                title: 'Request',
-                isLoading: isLoading.value,
-                onTap: () async {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  if (!isLoading.value) {
-                    isLoading.value = true;
-                    bool result = await _userStateController
-                        .reqGuardian(patientEmail.value.trim().toLowerCase());
-                    if (result) {
-                      await _userStateController.fetchRelationships();
-                      isLoading.value = false;
-                      return showDialog(
-                          context: context,
-                          builder: ((context) => const DefaultDialog(
-                                title: 'Request Succeeded',
-                                message:
-                                    'Your request has been sent to patient',
-                              )));
-                    } else {
-                      return showDialog(
-                          context: context,
-                          builder: ((context) => DefaultDialog(
-                                title: 'Request Failed',
-                                message:
-                                    'Unable to request to ${patientEmail.value}',
-                              )));
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+        appBar: const StandardAppBar().appBar(),
+        child: Column(
+          children: [
+            _buildEditInformationDisplay(
+                'Patient Email', patientEmail, 'Enter Patient\'s Email'),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
+              child: Obx(
+                () => CustomSplashButton(
+                  title: 'Request',
+                  isLoading: isLoading.value,
+                  onTap: () async {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    if (!isLoading.value) {
+                      isLoading.value = true;
+                      bool result = await _userStateController
+                          .reqGuardian(patientEmail.value.trim().toLowerCase());
+                      if (result) {
+                        await _userStateController.fetchRelationships();
+                        isLoading.value = false;
+                        return showDialog(
+                            context: context,
+                            builder: ((context) => const DefaultDialog(
+                                  title: 'Request Succeeded',
+                                  message:
+                                      'Your request has been sent to patient',
+                                )));
+                      } else {
+                        return showDialog(
+                            context: context,
+                            builder: ((context) => DefaultDialog(
+                                  title: 'Request Failed',
+                                  message:
+                                      'Unable to request to ${patientEmail.value}',
+                                )));
+                      }
                     }
-                  }
-                },
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

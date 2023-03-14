@@ -4,6 +4,7 @@ import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/datetime_helper.dart';
 import 'package:pill_dispenser/models/schedule.dart';
+import 'package:pill_dispenser/screens/add_pill_information_page.dart';
 import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
 import 'package:pill_dispenser/screens/qr_scan_page.dart';
 import 'package:pill_dispenser/screens/rescheduler_page.dart';
@@ -227,6 +228,17 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
             onTap: () async {
               Get.to(() =>
                   PatientWeeklyReportPage(_userStateController.patient[index]));
+            },
+            padding: const EdgeInsets.symmetric(vertical: 15.0),
+          ),
+          const SizedBox(
+            height: 20.0,
+          ),
+          CustomSplashButton(
+            title: 'Add Pill Information',
+            onTap: () async {
+              Get.to(() => AddPillInformationPage(
+                  patientData: _userStateController.patient[index]));
             },
             padding: const EdgeInsets.symmetric(vertical: 15.0),
           ),

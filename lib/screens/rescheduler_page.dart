@@ -60,7 +60,9 @@ class ReschedulerPage extends StatelessWidget {
           patientData!['email'] ?? '',
           patientData!['users_id'] ?? '');
       if (result) {
-        await _userStateController.fetchAllPatientsData(refreshSchedule: true);
+        await _userStateController.fetchPatientData(
+            patientData?['users_id'] ?? '',
+            refreshSchedule: true);
         _userStateController.patient.refresh();
       }
       return result;
@@ -82,317 +84,330 @@ class ReschedulerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StandardScaffold(
-        appBar: const StandardAppBar().appBar(),
-        child: Column(
-          children: [
-            const SizedBox(height: 15.0),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Patient: ${patientData?["name"] ?? ""} ${patientData?["email"] ?? ""}',
-                style: const TextStyle(
-                    fontSize: 20.0, fontWeight: FontWeight.w500),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+          appBar: const StandardAppBar().appBar(),
+          child: Column(
+            children: [
+              const SizedBox(height: 15.0),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Patient: ${patientData?["name"] ?? ""} ${patientData?["email"] ?? ""}',
+                  style: const TextStyle(
+                      fontSize: 20.0, fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
-            const SizedBox(height: 15.0),
-            Expanded(
-                child: ScrollConfiguration(
-              behavior: const ScrollBehavior().copyWith(overscroll: false),
-              child: ListView(
-                physics: const ClampingScrollPhysics(),
-                shrinkWrap: true,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Text(
-                      'Name of Medication',
-                      style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.w500),
+              const SizedBox(height: 15.0),
+              Expanded(
+                  child: ScrollConfiguration(
+                behavior: const ScrollBehavior().copyWith(overscroll: false),
+                child: ListView(
+                  physics: const ClampingScrollPhysics(),
+                  shrinkWrap: true,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Text(
+                        'Name of Medication',
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.w500),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                        color: Constants.white,
-                        borderRadius: BorderRadius.circular(15.0)),
-                    child: CustomInputTextBox(
-                      inputObs: name,
-                      title: 'Name',
+                    const SizedBox(height: 15.0),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                          color: Constants.white,
+                          borderRadius: BorderRadius.circular(15.0)),
+                      child: CustomInputTextBox(
+                        inputObs: name,
+                        title: 'Name',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Text(
-                      'Amount and Dosage',
-                      style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.w500),
+                    const SizedBox(height: 15.0),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Text(
+                        'Amount and Dosage',
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.w500),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                            child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            NumberSelectorWidget(pills, limit: 10),
-                            const SizedBox(height: 5.0),
-                            Obx(() => Text('${pills.value} Pills')),
-                          ],
-                        )),
-                        const SizedBox(
-                          width: 10.0,
-                        ),
-                        Expanded(
-                            child: Column(
-                          children: [
-                            NumberSelectorWidget(
-                              dailyDosage,
-                              limit: 24,
-                            ),
-                            const SizedBox(height: 5.0),
-                            Obx(() => Text('${dailyDosage.value} times Daily')),
-                          ],
-                        )),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Text(
-                      'When to take?',
-                      style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            type.value = 0;
-                          },
-                          child: Obx(
-                            () => Container(
-                              padding: const EdgeInsets.all(30.0),
-                              decoration: BoxDecoration(
-                                color: type.value == 0
-                                    ? Constants.primary
-                                    : Constants.white,
-                                borderRadius: BorderRadius.circular(20.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Constants.black.withOpacity(0.2),
-                                      blurRadius: 8.0)
-                                ],
-                              ),
-                              child: Text('After Meal',
-                                  style: TextStyle(
-                                    fontSize: 20.0,
-                                    fontWeight: FontWeight.w600,
-                                    color: type.value == 0
-                                        ? Constants.white
-                                        : Constants.black,
-                                  )),
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            type.value = 1;
-                          },
-                          child: Obx(
-                            () => Container(
-                              padding: const EdgeInsets.all(30.0),
-                              decoration: BoxDecoration(
-                                color: type.value == 0
-                                    ? Constants.white
-                                    : Constants.primary,
-                                borderRadius: BorderRadius.circular(20.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Constants.black.withOpacity(0.2),
-                                      blurRadius: 8.0)
-                                ],
-                              ),
-                              child: Text('Before Meal',
-                                  style: TextStyle(
-                                    fontSize: 20.0,
-                                    fontWeight: FontWeight.w600,
-                                    color: type.value == 0
-                                        ? Constants.black
-                                        : Constants.white,
-                                  )),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Text(
-                      'Notification',
-                      style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  const SizedBox(height: 15.0),
-                  Obx(() {
-                    return Padding(
+                    const SizedBox(height: 15.0),
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        children: timings
-                            .asMap()
-                            .map<int, Widget>((index, time) {
-                              return MapEntry(
-                                  index,
-                                  Container(
-                                    margin: const EdgeInsets.only(bottom: 15.0),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 10.0, horizontal: 20.0),
-                                    decoration: BoxDecoration(
-                                      color: Constants.white,
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Constants.black
-                                                .withOpacity(0.2),
-                                            blurRadius: 10.0),
-                                      ],
-                                      borderRadius: BorderRadius.circular(20.0),
-                                    ),
-                                    child: Row(children: [
-                                      const Icon(
-                                        Icons.notifications_active,
-                                        size: 40.0,
-                                        color: Constants.black,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                              child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              NumberSelectorWidget(pills, limit: 10),
+                              const SizedBox(height: 5.0),
+                              Obx(() => Text('${pills.value} Pills')),
+                            ],
+                          )),
+                          const SizedBox(
+                            width: 10.0,
+                          ),
+                          Expanded(
+                              child: Column(
+                            children: [
+                              NumberSelectorWidget(
+                                dailyDosage,
+                                limit: 24,
+                              ),
+                              const SizedBox(height: 5.0),
+                              Obx(() =>
+                                  Text('${dailyDosage.value} times Daily')),
+                            ],
+                          )),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 15.0),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Text(
+                        'When to take?',
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(height: 15.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              type.value = 0;
+                            },
+                            child: Obx(
+                              () => Container(
+                                padding: const EdgeInsets.all(30.0),
+                                decoration: BoxDecoration(
+                                  color: type.value == 0
+                                      ? Constants.primary
+                                      : Constants.white,
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Constants.black.withOpacity(0.2),
+                                        blurRadius: 8.0)
+                                  ],
+                                ),
+                                child: Text('After Meal',
+                                    style: TextStyle(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w600,
+                                      color: type.value == 0
+                                          ? Constants.white
+                                          : Constants.black,
+                                    )),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              type.value = 1;
+                            },
+                            child: Obx(
+                              () => Container(
+                                padding: const EdgeInsets.all(30.0),
+                                decoration: BoxDecoration(
+                                  color: type.value == 0
+                                      ? Constants.white
+                                      : Constants.primary,
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Constants.black.withOpacity(0.2),
+                                        blurRadius: 8.0)
+                                  ],
+                                ),
+                                child: Text('Before Meal',
+                                    style: TextStyle(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w600,
+                                      color: type.value == 0
+                                          ? Constants.black
+                                          : Constants.white,
+                                    )),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 15.0),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Text(
+                        'Notification',
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(height: 15.0),
+                    Obx(() {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Column(
+                          children: timings
+                              .asMap()
+                              .map<int, Widget>((index, time) {
+                                return MapEntry(
+                                    index,
+                                    Container(
+                                      margin:
+                                          const EdgeInsets.only(bottom: 15.0),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10.0, horizontal: 20.0),
+                                      decoration: BoxDecoration(
+                                        color: Constants.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Constants.black
+                                                  .withOpacity(0.2),
+                                              blurRadius: 10.0),
+                                        ],
+                                        borderRadius:
+                                            BorderRadius.circular(20.0),
                                       ),
-                                      const SizedBox(
-                                        width: 10.0,
-                                      ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            DateTime? response =
-                                                await showDialog(
-                                                    context: context,
-                                                    builder: ((dialogcontext) =>
-                                                        TimeSpinnerDialog(
-                                                            time)));
-                                            if (response != null) {
-                                              timings[index] = response;
-                                              timings.refresh();
-                                            }
-                                          },
-                                          child: Text(
-                                            '${time.hour.toString().padLeft(2, "0")}:${time.minute.toString().padLeft(2, "0")}',
-                                            style: const TextStyle(
-                                                fontSize: 25.0,
-                                                fontWeight: FontWeight.w700),
+                                      child: Row(children: [
+                                        const Icon(
+                                          Icons.notifications_active,
+                                          size: 40.0,
+                                          color: Constants.black,
+                                        ),
+                                        const SizedBox(
+                                          width: 10.0,
+                                        ),
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              DateTime? response =
+                                                  await showDialog(
+                                                      context: context,
+                                                      builder:
+                                                          ((dialogcontext) =>
+                                                              TimeSpinnerDialog(
+                                                                  time)));
+                                              if (response != null) {
+                                                timings[index] = response;
+                                                timings.refresh();
+                                              }
+                                            },
+                                            child: Text(
+                                              '${time.hour.toString().padLeft(2, "0")}:${time.minute.toString().padLeft(2, "0")}',
+                                              style: const TextStyle(
+                                                  fontSize: 25.0,
+                                                  fontWeight: FontWeight.w700),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      timings.length <= 1
-                                          ? Container()
-                                          : GestureDetector(
-                                              onTap: () {
-                                                timings.removeAt(index);
-                                              },
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.all(3.0),
-                                                decoration: const BoxDecoration(
-                                                    color: Constants.primary,
-                                                    shape: BoxShape.circle),
-                                                child: const Icon(
-                                                  Icons.remove,
-                                                  size: 50.0,
-                                                  color: Constants.white,
+                                        timings.length <= 1
+                                            ? Container()
+                                            : GestureDetector(
+                                                onTap: () {
+                                                  timings.removeAt(index);
+                                                },
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(3.0),
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                          color:
+                                                              Constants.primary,
+                                                          shape:
+                                                              BoxShape.circle),
+                                                  child: const Icon(
+                                                    Icons.remove,
+                                                    size: 50.0,
+                                                    color: Constants.white,
+                                                  ),
                                                 ),
                                               ),
+                                        const SizedBox(
+                                          width: 20.0,
+                                        ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            timings.add(time);
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(3.0),
+                                            decoration: const BoxDecoration(
+                                                color: Constants.primary,
+                                                shape: BoxShape.circle),
+                                            child: const Icon(
+                                              Icons.add,
+                                              size: 50.0,
+                                              color: Constants.white,
                                             ),
-                                      const SizedBox(
-                                        width: 20.0,
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          timings.add(time);
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.all(3.0),
-                                          decoration: const BoxDecoration(
-                                              color: Constants.primary,
-                                              shape: BoxShape.circle),
-                                          child: const Icon(
-                                            Icons.add,
-                                            size: 50.0,
-                                            color: Constants.white,
                                           ),
                                         ),
-                                      ),
-                                    ]),
-                                  ));
-                            })
-                            .values
-                            .toList(),
-                      ),
-                    );
-                  }),
-                  const SizedBox(
-                    height: 15.0,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Obx(
-                      () => CustomSplashButton(
-                          title: 'Schedule',
-                          isLoading: isLoading.value,
-                          onTap: () async {
-                            //SAVE everything
-                            if (!isLoading.value && error.isEmpty) {
-                              bool result =
-                                  await LoadingDialog.showLoadingDialog(
-                                      _reschedulePill(), context, () {
-                                return ModalRoute.of(context)?.isCurrent !=
-                                    true;
-                              });
-                              await showDialog(
-                                  context: context,
-                                  builder: (dContext) {
-                                    return DefaultDialog(
-                                        title: result ? 'Success' : 'Failed',
-                                        message: result
-                                            ? 'Successfully updated patient\'s schedule'
-                                            : 'Failed to update patient\'s schedule.\n' +
-                                                'Please try again later.');
-                                  });
-                              if (result) {
-                                Get.back();
-                              }
-                              isLoading.value = false;
-                            }
-                          }),
+                                      ]),
+                                    ));
+                              })
+                              .values
+                              .toList(),
+                        ),
+                      );
+                    }),
+                    const SizedBox(
+                      height: 15.0,
                     ),
-                  ),
-                  const SizedBox(height: 30.0),
-                ],
-              ),
-            )),
-          ],
-        ));
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Obx(
+                        () => CustomSplashButton(
+                            title: 'Schedule',
+                            isLoading: isLoading.value,
+                            onTap: () async {
+                              //SAVE everything
+                              if (!isLoading.value && error.isEmpty) {
+                                bool result =
+                                    await LoadingDialog.showLoadingDialog(
+                                        _reschedulePill(), context, () {
+                                  return ModalRoute.of(context)?.isCurrent !=
+                                      true;
+                                });
+                                await showDialog(
+                                    context: context,
+                                    builder: (dContext) {
+                                      return DefaultDialog(
+                                          title: result ? 'Success' : 'Failed',
+                                          message: result
+                                              ? 'Successfully updated patient\'s schedule'
+                                              : 'Failed to update patient\'s schedule.\n' +
+                                                  'Please try again later.');
+                                    });
+                                if (result) {
+                                  Get.back();
+                                }
+                                isLoading.value = false;
+                              }
+                            }),
+                      ),
+                    ),
+                    const SizedBox(height: 30.0),
+                  ],
+                ),
+              )),
+            ],
+          )),
+    );
   }
 }

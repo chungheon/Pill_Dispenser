@@ -496,112 +496,118 @@ class PillTrackingDetailsPage extends StatelessWidget {
       updateSchedule();
     });
     DateTime now = DateTime.now().subtract(const Duration(minutes: 5));
-    return StandardScaffold(
-        appBar: const StandardAppBar().appBar(),
-        child: Column(
-          children: [
-            const SizedBox(height: 15.0),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-              decoration: BoxDecoration(
-                  color: Constants.white,
-                  borderRadius: BorderRadius.circular(15.0)),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.search,
-                    size: 24.0,
-                    color: Constants.grey,
-                  ),
-                  Expanded(
-                    child: CustomInputTextBox(
-                      inputObs: searchTerm,
-                      title: 'Search',
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+          appBar: const StandardAppBar().appBar(),
+          child: Column(
+            children: [
+              const SizedBox(height: 15.0),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 12.0),
+                decoration: BoxDecoration(
+                    color: Constants.white,
+                    borderRadius: BorderRadius.circular(15.0)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.search,
+                      size: 24.0,
+                      color: Constants.grey,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20.0),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              padding: const EdgeInsets.all(20.0),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                  color: Constants.white,
-                  borderRadius: BorderRadius.circular(15.0),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Constants.primary.withOpacity(0.6),
-                        blurRadius: 8.0)
-                  ]),
-              child: Obx(
-                () => Text(
-                  'Your plan for today\n${completedIntake.toString()} of ${totalIntake.toString()} Completed',
-                  style: const TextStyle(
-                      fontSize: 20.0, fontWeight: FontWeight.w700),
+                    Expanded(
+                      child: CustomInputTextBox(
+                        inputObs: searchTerm,
+                        title: 'Search',
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20.0),
-            Container(
-              alignment: Alignment.centerLeft,
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Daily Review',
-                    style:
-                        TextStyle(fontSize: 18.0, fontWeight: FontWeight.w400),
+              const SizedBox(height: 20.0),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.all(20.0),
+                alignment: Alignment.centerLeft,
+                decoration: BoxDecoration(
+                    color: Constants.white,
+                    borderRadius: BorderRadius.circular(15.0),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Constants.primary.withOpacity(0.6),
+                          blurRadius: 8.0)
+                    ]),
+                child: Obx(
+                  () => Text(
+                    'Your plan for today\n${completedIntake.toString()} of ${totalIntake.toString()} Completed',
+                    style: const TextStyle(
+                        fontSize: 20.0, fontWeight: FontWeight.w700),
                   ),
-                  Row(
-                    children: [
-                      GestureDetector(
-                          onTap: () {
-                            viewType.value = 0;
-                          },
-                          child: Text("TIME")),
-                      const SizedBox(width: 10.0),
-                      GestureDetector(
-                          onTap: () {
-                            viewType.value = 1;
-                          },
-                          child: Text("PILL")),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(
-              height: 15.0,
-            ),
-            Expanded(
-              child: ScrollConfiguration(
-                behavior: const ScrollBehavior().copyWith(overscroll: false),
-                child: Obx(() {
-                  if (searchTerm.isNotEmpty) {
-                    searchList.clear();
-                    for (Schedule schedule in scheduleList) {
-                      if ((schedule.pill?.pill ?? "ERROR")
-                          .contains(searchTerm)) {
-                        searchList.add(schedule);
+              const SizedBox(height: 20.0),
+              Container(
+                alignment: Alignment.centerLeft,
+                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Daily Review',
+                      style: TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.w400),
+                    ),
+                    Row(
+                      children: [
+                        GestureDetector(
+                            onTap: () {
+                              viewType.value = 0;
+                            },
+                            child: Text("TIME")),
+                        const SizedBox(width: 10.0),
+                        GestureDetector(
+                            onTap: () {
+                              viewType.value = 1;
+                            },
+                            child: Text("PILL")),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 15.0,
+              ),
+              Expanded(
+                child: ScrollConfiguration(
+                  behavior: const ScrollBehavior().copyWith(overscroll: false),
+                  child: Obx(() {
+                    if (searchTerm.isNotEmpty) {
+                      searchList.clear();
+                      for (Schedule schedule in scheduleList) {
+                        if ((schedule.pill?.pill ?? "ERROR")
+                            .contains(searchTerm)) {
+                          searchList.add(schedule);
+                        }
                       }
+                      return viewType.value == 0
+                          ? _buildPillsListSecond(searchList, now)
+                          : _buildPillsList(searchList, now);
                     }
                     return viewType.value == 0
-                        ? _buildPillsListSecond(searchList, now)
-                        : _buildPillsList(searchList, now);
-                  }
-                  return viewType.value == 0
-                      ? _buildPillsListSecond(scheduleList, now)
-                      : _buildPillsList(scheduleList, now);
-                }),
+                        ? _buildPillsListSecond(scheduleList, now)
+                        : _buildPillsList(scheduleList, now);
+                  }),
+                ),
               ),
-            ),
-          ],
-        ));
+            ],
+          )),
+    );
   }
 }

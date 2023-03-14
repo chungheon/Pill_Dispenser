@@ -27,102 +27,108 @@ class ScheduleAppointmentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StandardScaffold(
-        appBar: const StandardAppBar().appBar(),
-        child: ListView(
-          children: [
-            const SizedBox(
-              height: 10.0,
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildEditInformationDisplay('Appointment Name',
-                  appointmentName, 'Enter Appointment Name'),
-            ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildEditInformationDisplay(
-                  'Message (Optional)', appointmentName, 'Message'),
-            ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            _buildCalenderDisplay(),
-            Container(
-              color: Constants.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-              child: Obx(
-                () => CustomSplashButton(
-                  title: selectedTime.value == null
-                      ? "Select Time"
-                      : _scheduleController
-                          .formatDateToStrTime(selectedTime.value!),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+          appBar: const StandardAppBar().appBar(),
+          child: ListView(
+            children: [
+              const SizedBox(
+                height: 10.0,
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildEditInformationDisplay('Appointment Name',
+                    appointmentName, 'Enter Appointment Name'),
+              ),
+              const SizedBox(
+                height: 20.0,
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildEditInformationDisplay(
+                    'Message (Optional)', appointmentName, 'Message'),
+              ),
+              const SizedBox(
+                height: 20.0,
+              ),
+              _buildCalenderDisplay(),
+              Container(
+                color: Constants.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 20.0),
+                child: Obx(
+                  () => CustomSplashButton(
+                    title: selectedTime.value == null
+                        ? "Select Time"
+                        : _scheduleController
+                            .formatDateToStrTime(selectedTime.value!),
+                    onTap: () async {
+                      selectedTime.value = await showDialog(
+                          context: context,
+                          builder: (dialogContext) {
+                            return TimeSpinnerDialog(
+                              selectedTime.value ?? currentDate.value,
+                              minutesInterval: 1,
+                            );
+                          });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Obx(
+                  () => _buildInformationDisplay(
+                    'Selected Date And Time',
+                    selectedDate.value == null
+                        ? 'Select A Date And Time'
+                        : '${_scheduleController.formatDateToStr(selectedDate.value!)}  ' +
+                            '${selectedTime.value != null ? _scheduleController.formatDateToStrTime(selectedTime.value!) : ""}',
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 20.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: CustomSplashButton(
+                  title: 'Schedule Appointment',
                   onTap: () async {
-                    selectedTime.value = await showDialog(
-                        context: context,
-                        builder: (dialogContext) {
-                          return TimeSpinnerDialog(
-                            selectedTime.value ?? currentDate.value,
-                            minutesInterval: 1,
-                          );
-                        });
+                    if (appointmentName.trim().isNotEmpty &&
+                        selectedDate.value != null &&
+                        selectedTime.value != null) {
+                      await _scheduleController.scheduleAppointment(
+                          _userStateController.user.value?.uid ?? 'ERROR',
+                          appointmentName.value,
+                          selectedDate.value ?? DateTime.now(),
+                          selectedTime.value ?? DateTime.now(),
+                          message: msg.value);
+                      Get.back();
+                    } else {
+                      showDialog(
+                          context: context,
+                          builder: ((dContext) {
+                            return const DefaultErrorDialog(
+                              title: 'Unable to continue',
+                              message:
+                                  'Please enter a Name, Date and Time to continue.',
+                            );
+                          }));
+                    }
                   },
                 ),
               ),
-            ),
-            const SizedBox(
-              height: 10.0,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Obx(
-                () => _buildInformationDisplay(
-                  'Selected Date And Time',
-                  selectedDate.value == null
-                      ? 'Select A Date And Time'
-                      : '${_scheduleController.formatDateToStr(selectedDate.value!)}  ' +
-                          '${selectedTime.value != null ? _scheduleController.formatDateToStrTime(selectedTime.value!) : ""}',
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: CustomSplashButton(
-                title: 'Schedule Appointment',
-                onTap: () async {
-                  if (appointmentName.trim().isNotEmpty &&
-                      selectedDate.value != null &&
-                      selectedTime.value != null) {
-                    await _scheduleController.scheduleAppointment(
-                        _userStateController.user.value?.uid ?? 'ERROR',
-                        appointmentName.value,
-                        selectedDate.value ?? DateTime.now(),
-                        selectedTime.value ?? DateTime.now(),
-                        message: msg.value);
-                    Get.back();
-                  } else {
-                    showDialog(
-                        context: context,
-                        builder: ((dContext) {
-                          return const DefaultErrorDialog(
-                            title: 'Unable to continue',
-                            message:
-                                'Please enter a Name, Date and Time to continue.',
-                          );
-                        }));
-                  }
-                },
-              ),
-            ),
-          ],
-        ));
+            ],
+          )),
+    );
   }
 
   TextStyle textStyleCalendar() {

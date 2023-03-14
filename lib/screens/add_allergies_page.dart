@@ -26,74 +26,80 @@ class _AddAllergiesPageState extends State<AddAllergiesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return StandardScaffold(
-        appBar: const StandardAppBar().appBar(),
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 10.0,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: _buildEditInformationDisplay(
-                  'Allergy Name', allergy, 'Enter Allegry Name'),
-            ),
-            const SizedBox(
-              height: 10.0,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: CustomSplashButton(
-                title: 'Add new allergy',
-                onTap: () async {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  if (!isLoading.value) {
-                    isLoading.value = true;
-                    bool result = await LoadingDialog.showLoadingDialog(
-                        _userStateController.addAllergy(allergy.value),
-                        context,
-                        () => ModalRoute.of(context)?.isCurrent != true);
-                    if (result) {
-                      await _userStateController.fetchUserDetailsOnline();
-                      allergy.value = '';
-                    } else {
-                      showDialog(
-                          context: context,
-                          builder: ((context) {
-                            return const DefaultErrorDialog(
-                              title: 'Unable to add allergy',
-                              message:
-                                  'Error adding allergy, please try again later.',
-                            );
-                          }));
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: StandardScaffold(
+          appBar: const StandardAppBar().appBar(),
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 10.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _buildEditInformationDisplay(
+                    'Allergy Name', allergy, 'Enter Allegry Name'),
+              ),
+              const SizedBox(
+                height: 10.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: CustomSplashButton(
+                  title: 'Add new allergy',
+                  onTap: () async {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    if (!isLoading.value) {
+                      isLoading.value = true;
+                      bool result = await LoadingDialog.showLoadingDialog(
+                          _userStateController.addAllergy(allergy.value),
+                          context,
+                          () => ModalRoute.of(context)?.isCurrent != true);
+                      if (result) {
+                        await _userStateController.fetchUserDetailsOnline();
+                        allergy.value = '';
+                      } else {
+                        showDialog(
+                            context: context,
+                            builder: ((context) {
+                              return const DefaultErrorDialog(
+                                title: 'Unable to add allergy',
+                                message:
+                                    'Error adding allergy, please try again later.',
+                              );
+                            }));
+                      }
+                      isLoading.value = false;
+                      setState(() {});
                     }
-                    isLoading.value = false;
-                    setState(() {});
-                  }
-                },
+                  },
+                ),
               ),
-            ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            Expanded(
-              child: Obx(
-                () {
-                  return ListView.builder(
-                    itemCount: _userStateController.allergies.length,
-                    itemBuilder: ((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: _buildInformationDisplay(
-                            _userStateController.allergies[index]),
-                      );
-                    }),
-                  );
-                },
+              const SizedBox(
+                height: 20.0,
               ),
-            ),
-          ],
-        ));
+              Expanded(
+                child: Obx(
+                  () {
+                    return ListView.builder(
+                      itemCount: _userStateController.allergies.length,
+                      itemBuilder: ((context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: _buildInformationDisplay(
+                              _userStateController.allergies[index]),
+                        );
+                      }),
+                    );
+                  },
+                ),
+              ),
+            ],
+          )),
+    );
   }
 
   Widget _buildEditInformationDisplay(

@@ -10,6 +10,7 @@ class CustomInputTextBox extends StatelessWidget {
     this.obscure,
     this.prefix,
     this.type,
+    this.maxLines = 1,
   }) : super(key: key) {
     _controller.text = inputObs.value;
     _controller.addListener(() => inputObs.value = _controller.text);
@@ -20,6 +21,8 @@ class CustomInputTextBox extends StatelessWidget {
   final bool? obscure;
   final Widget? prefix;
   final TextInputType? type;
+  final int maxLines;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -31,6 +34,7 @@ class CustomInputTextBox extends StatelessWidget {
           inputObs.value = _controller.text;
           FocusManager.instance.primaryFocus?.unfocus();
         },
+        maxLines: maxLines,
         decoration: InputDecoration(
           isDense: true,
           border: InputBorder.none,
