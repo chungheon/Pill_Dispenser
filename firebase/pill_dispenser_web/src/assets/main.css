@@ -1,0 +1,8 @@
+@import './base.css';
+
+#app {
+    margin: 0;
+    background-color: rgb(255, 255, 255);
+    font-weight: normal;
+    min-width: 400px
+  }
