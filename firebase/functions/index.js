@@ -7,6 +7,7 @@ const GRD_PAT_PATH = 'guardian_patient_list';
 const USER_SCH = 'user_schedule';
 const USERS_LIST = 'users_list';
 const USER_ID_KEY = 'users_id';
+const PILL_INFO = 'information';
 
 exports.reqGuardian = functions.region('asia-east2').https.onCall(async (data, context) => {
     if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
@@ -183,6 +184,7 @@ exports.schedulePatientPill = functions.region('asia-east2').https.onCall(async 
     var type = data.type;
     var scheduledTimes = data.scheduledTimes;
     var patientUID = data.patientUid;
+    console.log(data);
     var firestore = admin.firestore();
     let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
     if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
@@ -196,12 +198,54 @@ exports.schedulePatientPill = functions.region('asia-east2').https.onCall(async 
                 'scheduledTimes': scheduledTimes
             }
         }, {merge : true});
+        return { 'status': 'success', 'code': 200};
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.updatePillsInformation = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var currentUserId = context.auth.uid;
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var pillName = data.pillName;
+    var pillInfo = data.pillInfo;
+    var patientUID = data.patientUid;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var pillRef = firestore.collection(PILL_INFO).doc(patientUID);
+        await pillRef.set({
+            [pillName]: pillInfo,
+        }, {merge : true});
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.fetchPatientPillInformation = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var currentUserId = context.auth.uid;
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var patientUID = data.patientUid;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var scheduleRef = firestore.collection(PILL_INFO).doc(patientUID);
         var doc = await scheduleRef.get();
         return { 'status': 'success', 'code': 200, 'data': doc.data() };
     } else {
         return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
     }
 });
+
 
 
 function containsObject(obj, list) {
