@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 import { getFunctions } from 'firebase/functions';
@@ -21,3 +21,4 @@ export var auth = getAuth(app);
 export var firestore = getFirestore(app);
 export var rtdb = getDatabase(app);
 export const functions = getFunctions(app, 'asia-east2');
+export const googleProvider = new GoogleAuthProvider();

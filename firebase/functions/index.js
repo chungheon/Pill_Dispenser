@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require('firebase-admin');
+const FieldValue = require('firebase-admin').firestore.FieldValue;
 
 admin.initializeApp();
 
@@ -191,14 +192,39 @@ exports.schedulePatientPill = functions.region('asia-east2').https.onCall(async 
         var scheduleRef = firestore.collection(USER_SCH).doc(patientUID);
         await scheduleRef.set({
             [pillName]: {
-                'amount': pillAmount, 
-                'frequency': pillFrequency, 
-                'ingestType': type, 
-                'pill': pillName, 
+                'amount': pillAmount,
+                'frequency': pillFrequency,
+                'ingestType': type,
+                'pill': pillName,
                 'scheduledTimes': scheduledTimes
             }
-        }, {merge : true});
-        return { 'status': 'success', 'code': 200};
+        }, { merge: true });
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.removePillSchedule = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var currentUserId = context.auth.uid;
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var pillNames = data.pillNames;
+    var patientUID = data.patientUid;
+    console.log(data);
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var scheduleRef = firestore.collection(USER_SCH).doc(patientUID);
+        var updateMap = {};
+        for (var pillName of pillNames) {
+            updateMap[pillName] = FieldValue.delete();
+        }
+        await scheduleRef.update(updateMap);
+        return { 'status': 'success', 'code': 200 };
     } else {
         return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
     }
@@ -220,7 +246,32 @@ exports.updatePillsInformation = functions.region('asia-east2').https.onCall(asy
         var pillRef = firestore.collection(PILL_INFO).doc(patientUID);
         await pillRef.set({
             [pillName]: pillInfo,
-        }, {merge : true});
+        }, { merge: true });
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.removePillInformation = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var currentUserId = context.auth.uid;
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var pillNames = data.pillNames;
+    var patientUID = data.patientUid;
+    console.log(data);
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var scheduleRef = firestore.collection(PILL_INFO).doc(patientUID);
+        var updateMap = {};
+        for (var pillName of pillNames) {
+            updateMap[pillName] = FieldValue.delete();
+        }
+        await scheduleRef.update(updateMap);
         return { 'status': 'success', 'code': 200 };
     } else {
         return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };

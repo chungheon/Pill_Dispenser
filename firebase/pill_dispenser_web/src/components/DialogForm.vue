@@ -6,6 +6,7 @@
         <p>{{ message }}</p>
         <div class="dialog-buttons">
           <button @click="confirm">OK</button>
+          <button v-if="allowCancel" @click="cancel">Cancel</button>
         </div>
       </div>
     </div>
@@ -16,12 +17,16 @@
     props: {
       title: String,
       message: String,
-      visible: Boolean
+      visible: Boolean,
+      allowCancel: Boolean,
     },
     methods: {
       close() {
         this.$emit('update:visible', false)
       },
+      cancel(){
+        this.$emit('cancelled')
+      },  
       confirm() {
         this.$emit('confirmed')
         this.close()

@@ -2,9 +2,9 @@
 import { RouterLink, RouterView } from 'vue-router'
 import AccountHeader from './components/AccountHeader.vue'
 import TextFormField from './components/TextFormField.vue';
-import { auth, firestore, functions } from './FirebaseConfig';
-import { signInWithEmailAndPassword, setPersistence, getIdTokenResult, browserLocalPersistence } from 'firebase/auth';
-import { state } from './GlobalState.js';
+import { auth, firestore, functions, googleProvider } from './FirebaseConfig';
+import { signInWithEmailAndPassword, setPersistence, signInWithPopup, browserLocalPersistence } from 'firebase/auth';
+import { state, fetchingState } from './GlobalState.js';
 import { httpsCallable } from '@firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 </script>
@@ -45,10 +45,21 @@ export default {
             this.emailText = '';
             this.passwordText = '';
           });
-        })
-        .catch((error) => {
-
         });
+    },
+    loginGoogle() {
+      setPersistence(auth, browserLocalPersistence).then(() => {
+        signInWithPopup(auth, googleProvider)
+          .then((result) => {
+            console.log('Login Successful');
+            this.showLoginForm = false;
+            this.emailText = '';
+            this.passwordText = '';
+          })
+          .catch((err) => {
+            console.log(err); // This will give you all the information needed to further debug any errors
+          });
+      });
     },
     closeDrawer() {
       this.showLoginForm = false;
@@ -63,12 +74,15 @@ export default {
     },
     fetchRelationships() {
       if (state.user != null) {
+        fetchingState.fetchingRelationships = true;
         const relationships = httpsCallable(functions, 'fetchRelationships');
         relationships()
           .then((result) => {
             const data = result.data;
+            console.log(data);
             state.patients = data['patients'] ?? {};
             state.guardians = data['guardians'] ?? {};
+            fetchingState.fetchingRelationships = false;
           });
       }
     }
@@ -158,7 +172,17 @@ a {
   font-weight: 600;
   width: 100%;
   border-radius: 15px;
-  background-color: firebrick;
+  background-color: greenyellow;
+  padding: 5px 0px 5px 0px;
+}
+
+.google-btn {
+  margin-top: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  width: 100%;
+  border-radius: 15px;
+  background-color: white;
   padding: 5px 0px 5px 0px;
 }
 </style>
@@ -169,7 +193,7 @@ a {
       <nav class="navigation" style="color: rgb(0,0,25);">
         <div class="nav_section">
           <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/patients" v-if="Object.keys(state.patients).length > 0">Patients</RouterLink>
+          <RouterLink to="/patients" v-if="state.user != null">Patients</RouterLink>
         </div>
         <AccountHeader class="account_header" v-bind:isLoggedIn="state.user != null" :showFormValue="showLoginForm"
           v-bind:showFormValue="showLoginForm" v-on:update:showFormValue="showLoginForm = $event" />
@@ -184,6 +208,7 @@ a {
         <TextFormField label="Password" v-model="passwordText" hintText="Password" type="password" />
       </form>
       <button class="login_btn" type="submit" @click="login">Login</button>
+      <button class="google-btn" type="submit" @click="loginGoogle">Google Sign In/Sign Up</button>
     </section>
 
   </section>

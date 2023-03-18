@@ -8,3 +8,8 @@ export const state = reactive({
     guardians: {},
     patients: {},
 })
+
+export const fetchingState = reactive({
+    fetchingPatientDetails: false,
+    fetchingRelationships: false,
+})

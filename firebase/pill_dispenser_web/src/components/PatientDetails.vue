@@ -1,12 +1,63 @@
 <script setup>
 import { RouterLink } from 'vue-router';
+import router from '../router';
 import TextDetails from './TextDetailsField.vue';
+import { functions } from '../FirebaseConfig';
+import { httpsCallable } from '@firebase/functions';
+import { state } from '../GlobalState';
 </script>
 
 <script>
 export default {
-    props: ["patientData"],
-    components: { RouterLink }
+    data() {
+        return {
+            showDetails: false,
+        }
+    },
+    emits: ['update:dialogTitle', 'update:dialogText', 'update:dialogConfirmed', 'update:dialogVisible',],
+    props: {
+        'patientData': 'patientData',
+        deletePatientCallback: {
+            type: Function,
+            required: true,
+        },
+        deletePillCallback: {
+            type: Function,
+            required: true,
+        },
+    },
+    components: { RouterLink },
+    methods: {
+        getTiming(timing) {
+            var time = new Date(timing);
+            return time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
+        },
+        goEditPill(pillName) {
+            this.$router.push({
+                name: 'editschedule', params: {
+                    'patientEmail': this.patientData['email'],
+                    'pill': pillName,
+                }
+            });
+        },
+        async fetchScheduleData() {
+            this.showDialog('Updating details', 'Updating patient details...');
+            const scheduleData = httpsCallable(functions, 'fetchPatientSchedule');
+            await scheduleData({ 'patientUid': this.patientData['users_id'] })
+                .then((result) => {
+                    const data = result.data;
+                    if (data['code'] == 200) {
+                        state.patients[this.patientData['email']]['schedule'] = data['data'];
+                    }
+                });
+        },
+        removePatient() {
+            this.deletePatientCallback(this.patientData['email'], this.patientData['users_id']);
+        },
+        onClickDelete(patientUID, patientEmail, pillName) {
+            this.deletePillCallback(patientUID, patientEmail, pillName);
+        },
+    }
 }
 </script>
 <style scoped>
@@ -60,27 +111,109 @@ a:hover {
     top: 4px;
     box-shadow: 0 0 0 1px #163772 inset, 0 0 0 2px rgba(255, 255, 255, 0.15) inset, 0 0 0 0 #333797, 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0px 8px 1px rgba(0, 0, 0, 0.5);
 }
+
+.schedule-details {
+    margin-bottom: 20px;
+}
+
+.schedule {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid black;
+}
+
+.scheduled-timings {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    max-height: 100px;
+}
+
+.timing {
+    margin: 0px 0px 0px 10px;
+}
+
+.details-btn {
+    padding: 7px;
+}
+
+.details-btn:hover {
+    background-color: rgba(100, 100, 100, 1);
+    cursor: pointer;
+}
+
+.remove-patient-btn {
+    text-align: center;
+}
+
+.remove-patient-btn:hover {
+    background-color: rgba(100, 100, 100, 0.2);
+    cursor: pointer;
+}
 </style>
 
 <template>
     <section class="patient_section">
         <div class="patient_details">
-            <TextDetails class="details" label="Name" :modelValue="patientData['name']" />
-            <TextDetails label="Email" :modelValue="patientData['email']" />
-            <TextDetails label="Contact" :modelValue="patientData['contact_details']" />
+            <h3 @click="removePatient" class="remove-patient-btn">Remove patient</h3>
+            <div>
+                <TextDetails class="details" label="Name" :modelValue="patientData['name']" />
+                <TextDetails label="Email" :modelValue="patientData['email']" />
+                <TextDetails label="Contact" :modelValue="patientData['contact_details']" />
+            </div>
         </div>
+
         <div class="options">
             <div class="option">
-                <RouterLink :to="{ name: 'pillschedule', params: { patientEmail: patientData['email'] } }">Add Patient's Pill
+                <RouterLink :to="{ name: 'pillschedule', params: { patientEmail: patientData['email'] } }">Add Patient's
+                    Pill
                 </RouterLink>
             </div>
             <div class="option">
-                <RouterLink :to="{ name: 'weeklyreport', params: { patientEmail: patientData['email'] } }">View Weekly Report</RouterLink>
+                <RouterLink :to="{ name: 'weeklyreport', params: { patientEmail: patientData['email'] } }">View Weekly
+                    Report</RouterLink>
             </div>
             <div class="option">
-                <RouterLink :to="{ name: 'pillinformation', params: { patientEmail: patientData['email'] } }">Add Pill Information</RouterLink>
+                <RouterLink :to="{ name: 'pillinformation', params: { patientEmail: patientData['email'] } }">Add Pill
+                    Information</RouterLink>
             </div>
-
+        </div>
+    </section>
+    <div style="display: flex; margin-bottom: 10px;">
+        <h3 v-if="!showDetails" @click="showDetails = !showDetails">Show Details</h3>
+        <h3 v-if="showDetails" @click="showDetails = !showDetails">Hide Details</h3>
+    </div>
+    <section class="schedule-details" v-if="showDetails">
+        <div>
+            <h2>Allergies</h2>
+            <div v-for="v, k in patientData['allergies']">
+                <h2 style="padding: 0px 0px 0px 10px;  border: 1px solid black;">{{ k }}</h2>
+            </div>
+        </div>
+        <br />
+        <h2>Pill Schedule</h2>
+        <div style>
+            <div class="schedule" v-for="e in patientData['schedule']">
+                <div style="width: 30%; padding-left: 10px;">
+                    <h3>Pill Name: {{ e['pill'] }}</h3>
+                    <h3>Amount: {{ e['amount'] }}</h3>
+                    <h3>Fequency: {{ e['frequency'] }}</h3>
+                </div>
+                <h3>Scheduled Timings:</h3>
+                <div class="scheduled-timings">
+                    <div v-for="t in e['scheduledTimes']">
+                        <h3 class="timing">{{ getTiming(t) }}</h3>
+                    </div>
+                </div>
+                <div style="margin-left: auto;" @click="goEditPill(e['pill'])">
+                    <h3 class="details-btn">Edit</h3>
+                </div>
+                <div style="margin: 0px 10px;"
+                    @click="onClickDelete(patientData['users_id'], patientData['email'], e['pill'])">
+                    <h3 class="details-btn">Delete</h3>
+                </div>
+            </div>
         </div>
     </section>
 </template>

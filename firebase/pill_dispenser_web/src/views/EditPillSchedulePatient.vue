@@ -44,6 +44,12 @@ export default {
         if (this.patientData == null) {
             this.$router.push({ name: 'notfound' });
         }
+
+        this.name = this.$route.params['pill'];
+        if (this.patientData['schedule'][this.name] == null) {
+            this.$router.push({ name: 'notfound' });
+        }
+        this.setData(this.patientData['schedule'][this.name]);
         if (this.timingsList.length == 0) {
             let currTime = new Date;
             currTime.setMinutes(currTime.getMinutes() < 30 ? 0 : 30);
@@ -52,6 +58,18 @@ export default {
         }
     },
     methods: {
+        setData(pillData) {
+            console.log(pillData);
+            this.amount = pillData['amount'];
+            this.freq = pillData['frequency'];
+            this.ingestType = pillData['ingestType'];
+            this.timingsList = [];
+            for (var timing of (pillData['scheduledTimes'] ?? [])) {
+                console.log(timing);
+                console.log(new Date(timing));
+                this.timingsList.push(new Date(timing));
+            }
+        },
         toggleDialog(index) {
             this.selectedHour = this.timingsList[index].getHours().toString().padStart(2, '0');
             this.selectedMinute = this.timingsList[index].getMinutes() < 30 ? '00' : '30';
@@ -91,9 +109,6 @@ export default {
             if (this.name.trim().length == 0) {
                 error += "Name cannot be empty\n";
             }
-            if (this.patientData['schedule'][this.name] != null) {
-                error += "Name already exists\n";
-            }
 
             return error;
         },
@@ -124,10 +139,7 @@ export default {
                 this.customDialogTitle = 'Unable to schedule pill';
                 this.customDialogText = this.validatePill();
                 this.customDialogConfirmed = () => {
-                    this.customDialogVisible = false;
-                    this.customDialogText = '';
-                    this.customDialogConfirmed = null;
-                    this.customDialogTitle = '';
+                    this.resetCustomDialog();
                 };
             }
         },
@@ -136,7 +148,9 @@ export default {
             await scheduleData({ 'patientUid': this.patientData['users_id'] })
                 .then((result) => {
                     const data = result.data;
-                    state.patients[this.patientData['email']]['schedule'] = data['data'];
+                    if (data['code'] == 200) {
+                        state.patients[this.patientData['email']]['schedule'] = data['data'];
+                    }
                 });
         },
         async schedulePillForPatient(pillData) {
@@ -151,27 +165,26 @@ export default {
                         this.customDialogTitle = 'Unable to schedule pill';
                         this.customDialogText = data['message'];
                         this.customDialogConfirmed = () => {
-                            this.customDialogVisible = false;
-                            this.customDialogText = '';
-                            this.customDialogConfirmed = null;
-                            this.customDialogTitle = '';
+                            this.resetCustomDialog();
                         };
                         this.customDialogVisible = true;
                     } else {
-                        await this.fetchScheduleData(),
-                            this.customDialogTitle = 'Pill Scheduled!';
+                        await this.fetchScheduleData();
+                        this.customDialogTitle = 'Pill Scheduled!';
                         this.customDialogText = 'Pill has been scheduled!';
                         this.customDialogConfirmed = () => {
                             this.$router.back();
-                            this.customDialogVisible = false;
-                            this.customDialogText = '';
-                            this.customDialogConfirmed = null;
-                            this.customDialogTitle = '';
+                            this.resetCustomDialog();
                         }
                         this.customDialogVisible = true;
                     }
                 });
-
+        },
+        resetCustomDialog() {
+            this.customDialogVisible = false;
+            this.customDialogText = '';
+            this.customDialogConfirmed = null;
+            this.customDialogTitle = '';
         }
     }
 
@@ -247,7 +260,7 @@ main {
             <TextDetails class="details" label="Contact" :modelValue="patientData['contact_details']" />
         </section>
         <section id="schedule_timings">
-            <TextFormField label="Name" v-model="name" hint="Enter pill name" width="100%" />
+            <TextDetails label="Name" :modelValue="name" width="100%" />
             <TextFormField label="Amount" v-model="amount" hint="Amount per intake" type="number" inputLength="2"
                 width="100%" min="1" max="10" onKeyDown="return false" />
             <TextFormField label="Frequency" v-model="freq" hint="Frequency per day" type="number" inputLength="2"
