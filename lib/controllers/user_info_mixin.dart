@@ -193,8 +193,20 @@ class UserInfoMixin {
     return false;
   }
 
-  Future<bool> removeGuardian(String grdEmail) async {
-    return true;
+  Future<bool> removeRelationship(String grdEmail, String patientEmail,
+      String patientUID, String grdUID) async {
+    HttpsCallable callable = _functions.httpsCallable('removeGuardianPatient');
+    final result = (await callable.call(<String, dynamic>{
+      'grdUID': grdUID,
+      'grdEmail': grdEmail,
+      'patientUID': patientUID,
+      'patientEmail': patientEmail,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+    return false;
   }
 
   Future<bool> updateUserDetails(

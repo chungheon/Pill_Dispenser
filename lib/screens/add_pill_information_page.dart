@@ -33,7 +33,7 @@ class _AddPillInformationPageState extends State<AddPillInformationPage> {
   @override
   void initState() {
     patientData.addAll(widget.patientData ?? {});
-    _userStateController.setPillData(patientData['pill_info']);
+    _userStateController.setPillData(patientData['pill_info'] ?? {});
     super.initState();
   }
 
@@ -46,77 +46,80 @@ class _AddPillInformationPageState extends State<AddPillInformationPage> {
       },
       child: StandardScaffold(
           appBar: const StandardAppBar().appBar(),
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 10.0,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: _buildEditInformationDisplay(
-                    'Pill Name', pillName, 'Enter Pill Name'),
-              ),
-              const SizedBox(
-                height: 10.0,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: _buildEditInformationDisplay(
-                    'Pill Information', pillInformation, 'Enter Pill Info',
-                    maxLines: 5),
-              ),
-              const SizedBox(
-                height: 10.0,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: CustomSplashButton(
-                  title: 'Add new information',
-                  onTap: () async {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    if (!isLoading.value) {
-                      isLoading.value = true;
-                      bool result = await LoadingDialog.showLoadingDialog(
-                          _scheduleController.updatePillsInformationForPatient(
-                            pillName.value,
-                            pillInformation.value,
-                            widget.patientData?['users_id'] ?? '',
-                          ),
-                          context,
-                          () => ModalRoute.of(context)?.isCurrent != true);
-                      if (result) {
-                        await _userStateController.fetchPatientData(
-                            widget.patientData?['users_id'] ?? '',
-                            refreshInfo: true);
-                        patientData.value = _userStateController
-                            .getPatientData(patientData['users_id']);
-                        _userStateController
-                            .setPillData(patientData['pill_info']);
-
-                        pillName.value = '';
-                        pillInformation.value = '';
-                      } else {
-                        showDialog(
-                            context: context,
-                            builder: ((context) {
-                              return const DefaultErrorDialog(
-                                title: 'Unable to add information',
-                                message:
-                                    'Error adding pill information, please try again later.',
-                              );
-                            }));
-                      }
-                      isLoading.value = false;
-                      setState(() {});
-                    }
-                  },
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 10.0,
                 ),
-              ),
-              const SizedBox(
-                height: 20.0,
-              ),
-              Expanded(
-                child: Container(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: _buildEditInformationDisplay(
+                      'Pill Name', pillName, 'Enter Pill Name'),
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: _buildEditInformationDisplay(
+                      'Pill Information', pillInformation, 'Enter Pill Info',
+                      maxLines: 5),
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: CustomSplashButton(
+                    title: 'Add new information',
+                    onTap: () async {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      if (!isLoading.value &&
+                          pillName.value.trim().isNotEmpty &&
+                          pillInformation.value.trim().isNotEmpty) {
+                        isLoading.value = true;
+                        bool result = await LoadingDialog.showLoadingDialog(
+                            _scheduleController
+                                .updatePillsInformationForPatient(
+                              pillName.value,
+                              pillInformation.value,
+                              widget.patientData?['users_id'] ?? '',
+                            ),
+                            context,
+                            () => ModalRoute.of(context)?.isCurrent != true);
+                        if (result) {
+                          await _userStateController.fetchPatientData(
+                              widget.patientData?['users_id'] ?? '',
+                              refreshInfo: true);
+                          patientData.value = _userStateController
+                              .getPatientData(patientData['users_id']);
+                          _userStateController
+                              .setPillData(patientData['pill_info']);
+
+                          pillName.value = '';
+                          pillInformation.value = '';
+                        } else {
+                          showDialog(
+                              context: context,
+                              builder: ((context) {
+                                return const DefaultErrorDialog(
+                                  title: 'Unable to add information',
+                                  message:
+                                      'Error adding pill information, please try again later.',
+                                );
+                              }));
+                        }
+                        isLoading.value = false;
+                        setState(() {});
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(
+                  height: 20.0,
+                ),
+                Container(
                   margin: const EdgeInsets.symmetric(
                       horizontal: 20.0, vertical: 15.0),
                   decoration: BoxDecoration(
@@ -156,13 +159,29 @@ class _AddPillInformationPageState extends State<AddPillInformationPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(
+                        height: 20.0,
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           )),
     );
+  }
+
+  Future<bool> _removePillInformation(String pillName) async {
+    bool result = await _userStateController.removePillInformationPatient(
+        [pillName], patientData['users_id'] ?? '');
+    if (result) {
+      await _userStateController.fetchPatientData(patientData['users_id'] ?? '',
+          refreshInfo: true);
+      patientData.value =
+          _userStateController.getPatientData(patientData['users_id']);
+      _userStateController.setPillData(patientData['pill_info']);
+    }
+    return result;
   }
 
   Widget itemWidget(String pillName, String pillInformation) {
@@ -177,9 +196,27 @@ class _AddPillInformationPageState extends State<AddPillInformationPage> {
       ),
       child: Column(
         children: [
-          Text(
-            pillName,
-            style: const TextStyle(fontSize: 21.0, fontWeight: FontWeight.w600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                pillName,
+                style: const TextStyle(
+                    fontSize: 21.0, fontWeight: FontWeight.w600),
+              ),
+              GestureDetector(
+                onTap: () {
+                  LoadingDialog.showLoadingDialog(
+                      _removePillInformation(pillName),
+                      context,
+                      () => ModalRoute.of(context)?.isCurrent != true);
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(fontSize: 21.0),
+                ),
+              ),
+            ],
           ),
           const SizedBox(
             height: 10.0,

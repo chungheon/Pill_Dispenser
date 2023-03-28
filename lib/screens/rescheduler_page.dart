@@ -82,6 +82,33 @@ class ReschedulerPage extends StatelessWidget {
     }
   }
 
+  Future<bool> _removeSchedule() async {
+    if (patientData != null) {
+      bool result = await _scheduleController.removeScheduleForPatient(
+          [name.value], patientData!['users_id'] ?? '');
+      if (result) {
+        await _userStateController.fetchPatientData(
+            patientData!['users_id'] ?? '',
+            refreshSchedule: true);
+        _userStateController.patient.refresh();
+      }
+      return result;
+    } else {
+      Pill pill = _createPill();
+      Schedule schedule = Schedule(
+        scheduledTimes: timings,
+        pill: pill,
+      );
+      await _scheduleController.updateSchedule(
+        schedule,
+        _userStateController.user.value?.uid ?? "ERROR",
+      );
+      await _scheduleController.storeScheduleData(
+          schedule, _userStateController.user.value?.uid ?? '');
+      return true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -90,7 +117,39 @@ class ReschedulerPage extends StatelessWidget {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: StandardScaffold(
-          appBar: const StandardAppBar().appBar(),
+          appBar: StandardAppBar(
+              action: GestureDetector(
+            onTap: () async {
+              if (!isLoading.value && error.isEmpty) {
+                bool result = await LoadingDialog.showLoadingDialog(
+                    _removeSchedule(), context, () {
+                  return ModalRoute.of(context)?.isCurrent != true;
+                });
+                await showDialog(
+                    context: context,
+                    builder: (dContext) {
+                      return DefaultDialog(
+                          title: result ? 'Success' : 'Failed',
+                          message: result
+                              ? 'Successfully updated patient\'s schedule'
+                              : 'Failed to update patient\'s schedule.\n' +
+                                  'Please try again later.');
+                    });
+                if (result) {
+                  Get.back();
+                }
+                isLoading.value = false;
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              alignment: Alignment.center,
+              child: const Text(
+                'Delete',
+                style: TextStyle(fontSize: 20.0, color: Constants.black),
+              ),
+            ),
+          )).appBar(),
           child: Column(
             children: [
               const SizedBox(height: 15.0),

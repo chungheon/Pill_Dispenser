@@ -10,6 +10,7 @@ import 'package:pill_dispenser/screens/qr_scan_page.dart';
 import 'package:pill_dispenser/screens/rescheduler_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
@@ -403,20 +404,43 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
           BoxShadow(color: Constants.black.withOpacity(0.2), blurRadius: 10.0),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'Name: ${data["name"]}',
-            style: const TextStyle(fontSize: 17.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Name: ${data["name"]}',
+                  style: const TextStyle(fontSize: 17.0),
+                ),
+                Text(
+                  'Email: ${data["email"]}',
+                  style: const TextStyle(fontSize: 17.0),
+                ),
+                Text(
+                  'Contact Details: ${data["contact_details"]}',
+                  style: const TextStyle(fontSize: 17.0),
+                ),
+              ],
+            ),
           ),
-          Text(
-            'Email: ${data["email"]}',
-            style: const TextStyle(fontSize: 17.0),
-          ),
-          Text(
-            'Contact Details: ${data["contact_details"]}',
-            style: const TextStyle(fontSize: 17.0),
+          GestureDetector(
+            onTap: () async {
+              bool result = await LoadingDialog.showLoadingDialog(
+                  _userStateController.removeRelationship(
+                    _userStateController.user.value?.email ?? '',
+                    data['email'],
+                    data['users_id'],
+                    _userStateController.user.value?.uid ?? '',
+                  ),
+                  context,
+                  () => ModalRoute.of(context)?.isCurrent != true);
+              if (result) {
+                _userStateController.updateRelationships();
+              }
+            },
+            child: Text('Delete'),
           ),
         ],
       ),

@@ -6,7 +6,9 @@ import 'package:pill_dispenser/datetime_helper.dart';
 import 'package:pill_dispenser/screens/add_allergies_page.dart';
 import 'package:pill_dispenser/screens/guardian_request_page.dart';
 import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
+import 'package:pill_dispenser/screens/select_patient_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
+import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
@@ -288,23 +290,13 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
             const SizedBox(
               height: 10.0,
             ),
-            ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _userStateController.patient.length,
-                itemBuilder: ((context, index) {
-                  var data = _userStateController.patient[index];
-                  bool isPending = !data.containsKey('name');
-
-                  return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: isPending
-                          ? _buildPendingDisplay(data)
-                          : _buildRelationDisplay(
-                              data,
-                              () =>
-                                  Get.to(() => PatientWeeklyReportPage(data))));
-                })),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: CustomSplashButton(
+                title: 'View Patients',
+                onTap: () => Get.to(() => const SelectPatientPage()),
+              ),
+            )
           ],
         );
       }),
@@ -335,7 +327,8 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 itemBuilder: ((context, index) {
                   var data = _userStateController.guardian[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 5.0),
                     child: _buildRelationDisplay(data, () {}),
                   );
                 })),
@@ -425,20 +418,42 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                 color: Constants.black.withOpacity(0.2), blurRadius: 10.0),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              'Name: ${data["name"]}',
-              style: const TextStyle(fontSize: 17.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Name: ${data["name"]}',
+                    style: const TextStyle(fontSize: 17.0),
+                  ),
+                  Text(
+                    'Email: ${data["email"]}',
+                    style: const TextStyle(fontSize: 17.0),
+                  ),
+                  Text(
+                    'Contact Details: ${data["contact_details"]}',
+                    style: const TextStyle(fontSize: 17.0),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              'Email: ${data["email"]}',
-              style: const TextStyle(fontSize: 17.0),
-            ),
-            Text(
-              'Contact Details: ${data["contact_details"]}',
-              style: const TextStyle(fontSize: 17.0),
+            GestureDetector(
+              onTap: () async {
+                bool result = await LoadingDialog.showLoadingDialog(
+                    _userStateController.removeRelationship(
+                        data['email'],
+                        _userStateController.user.value?.email ?? '',
+                        _userStateController.user.value?.uid ?? '',
+                        data['users_id']),
+                    context,
+                    () => ModalRoute.of(context)?.isCurrent != true);
+                if (result) {
+                  _userStateController.updateRelationships();
+                }
+              },
+              child: Text('Delete'),
             ),
           ],
         ),

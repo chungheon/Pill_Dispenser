@@ -140,19 +140,23 @@ class UserStateController extends GetxController
       bool refreshReport = false,
       bool refreshInfo = false}) async {
     for (var pIndex = 0; pIndex < patient.length; pIndex++) {
-      if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
-        var pData = await fetchPatientScheduleData(patient[pIndex]);
-        patient[pIndex]['schedule'] = pData;
-      }
+      var data = patient[pIndex];
 
-      if (!patient[pIndex].keys.contains('report') || refreshReport) {
-        var pReport = await fetchPatientWeeklyReport(patient[pIndex]);
-        patient[pIndex]['report'] = pReport;
-      }
+      if (data[data.keys.first] != 'pending') {
+        if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
+          var pData = await fetchPatientScheduleData(patient[pIndex]);
+          patient[pIndex]['schedule'] = pData;
+        }
 
-      if (!patient[pIndex].keys.contains('pill_info') || refreshInfo) {
-        var pPills = await fetchPatientsPillInformation(patient[pIndex]);
-        patient[pIndex]['pill_info'] = pPills;
+        if (!patient[pIndex].keys.contains('report') || refreshReport) {
+          var pReport = await fetchPatientWeeklyReport(patient[pIndex]);
+          patient[pIndex]['report'] = pReport;
+        }
+
+        if (!patient[pIndex].keys.contains('pill_info') || refreshInfo) {
+          var pPills = await fetchPatientsPillInformation(patient[pIndex]);
+          patient[pIndex]['pill_info'] = pPills;
+        }
       }
     }
   }

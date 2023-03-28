@@ -18,6 +18,24 @@ class PatientInfoMixin {
     return {};
   }
 
+  /*
+      var pillNames = data.pillNames;
+      var patientUID = data.patientUid;
+  */
+  Future<bool> removePillInformationPatient(
+      List<String> pillNames, String patientUid) async {
+    HttpsCallable callable = _functions.httpsCallable('removePillInformation');
+    final result = (await callable.call(<String, dynamic>{
+      'pillNames': pillNames,
+      'patientUid': patientUid,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 404) == 200) {
+      return true;
+    }
+    return false;
+  }
+
   Future<Map<String, dynamic>> fetchPatientWeeklyReport(
       Map<String, dynamic> patientDetails) async {
     HttpsCallable callable = _functions.httpsCallable('fetchReportData');

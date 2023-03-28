@@ -257,7 +257,6 @@ class KeyboardAvoider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(MediaQuery.of(context).viewInsets.bottom);
     return AnimatedContainer(
       margin: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom > 0
