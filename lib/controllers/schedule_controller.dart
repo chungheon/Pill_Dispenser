@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:pill_dispenser/controllers/patient_schedule_mixin.dart';
@@ -18,6 +19,46 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
   bool permission = false;
   Box? scheduleBox;
   Box? pillBox;
+  final RxList<Appointment> appointments = RxList<Appointment>();
+  final RxMap<dynamic, dynamic> schedulesData = RxMap<dynamic, dynamic>({});
+  StreamSubscription? scheduleStream;
+  StreamSubscription? apptStream;
+
+  Future<void> setupStreamListener(String userId) async {
+    DocumentReference scheduleRef =
+        _firestore.collection("user_schedule").doc(userId);
+    CollectionReference apptRef = _firestore
+        .collection("user_appointments")
+        .doc(userId)
+        .collection('appointments');
+    scheduleStream = scheduleRef.snapshots().listen((event) {
+      schedulesData.value =
+          Map<dynamic, dynamic>.from((event.data() ?? {}) as Map);
+      updateNotifications((event.data() ?? {}) as Map);
+    });
+    apptStream = apptRef.snapshots().listen((event) {
+      updateAppointments(event.docs);
+    });
+  }
+
+  void updateAppointments(List<QueryDocumentSnapshot> docs) {
+    var appointmentList = docs.map((doc) {
+      Appointment appt =
+          Appointment.fromJson(Map<String, dynamic>.from(doc.data() as Map));
+      return appt;
+    }).toList();
+    appointmentList.sort(((a, b) {
+      if (a.apptDateTime == null || b.apptDateTime == null) {
+        return -1;
+      }
+      if (a.apptDateTime!.isBefore(b.apptDateTime!)) {
+        return -1;
+      } else {
+        return 1;
+      }
+    }));
+    appointments.value = appointmentList;
+  }
 
   Future<List<PendingNotificationRequest>> getAllPendingNotifications() {
     return flutterLocalNotificationsPlugin.pendingNotificationRequests();
@@ -141,12 +182,7 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
       DateTime now = DateTime.now();
       sch.upToDate(now);
       await scheduleTimings(sch);
-      // print(sch.scheduledTimes.length);
     }
-    // var notifications = await getAllPendingNotifications();
-    // for (var notification in notifications) {
-    //   print("${notification.title} ${notification.body} ${notification.id}");
-    // }
   }
 
   List<Schedule> formatToScheduleList(Map<dynamic, dynamic> data) {

@@ -8,16 +8,13 @@ import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/screens/guardian_requests_list_page.dart';
 import 'package:pill_dispenser/screens/login_home_page.dart';
 import 'package:pill_dispenser/screens/patient_details_page.dart';
-import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
 import 'package:pill_dispenser/screens/pill_tracking_details_page.dart';
 import 'package:pill_dispenser/screens/pills_information_page.dart';
 import 'package:pill_dispenser/screens/schedule_appointment_page.dart';
-import 'package:pill_dispenser/screens/scheduler_page.dart';
 import 'package:pill_dispenser/screens/select_patient_page.dart';
 import 'package:pill_dispenser/screens/view_appointment_page.dart';
 import 'package:pill_dispenser/screens/weekly_report_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
-import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 
 class HomePage extends StatelessWidget {
@@ -33,6 +30,8 @@ class HomePage extends StatelessWidget {
       progress.value = "Setting up Local Storage...";
       await _scheduleController.setBox(_userStateController.user.value!.uid);
       _userStateController.syncProgress.value = 10;
+      await _scheduleController
+          .setupStreamListener(_userStateController.user.value!.uid);
       // final offlineData = _scheduleController.fetchOfflineData();
       // final pendingNotif =
       //     await _scheduleController.getAllPendingNotifications();
@@ -116,64 +115,30 @@ class UserHomePage extends StatefulWidget {
   State<UserHomePage> createState() => _UserHomePageState();
 }
 
-class _UserHomePageState extends State<UserHomePage>
-    with WidgetsBindingObserver, RouteAware {
+class _UserHomePageState extends State<UserHomePage> {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
 
   final ScheduleController _scheduleController = Get.find<ScheduleController>();
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
-  AppLifecycleState _lastState = AppLifecycleState.resumed;
-
-  final RxList<int> hours = <int>[].obs;
-  final RxList<List<Schedule>> specificTimeSchedule = <List<Schedule>>[].obs;
   final RxMap completed = {}.obs;
   final Rx<DateTime> currTime =
       DateTime.now().subtract(const Duration(minutes: 5)).obs;
-  @override
-  void initState() {
-    routeObserver.subscribe(this, Get.rawRoute as PageRoute);
-    super.initState();
-    fetchUpcomingNotifications();
-    WidgetsBinding.instance.addObserver(this);
-  }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
     FocusManager.instance.primaryFocus?.unfocus();
     super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    fetchUpcomingNotifications();
-    super.didPopNext();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        _lastState == AppLifecycleState.paused) {
-      fetchUpcomingNotifications();
-    }
-    _lastState = state;
-    super.didChangeAppLifecycleState(state);
   }
 
   int getTimeValue(DateTime dateTime) {
     return dateTime.hour * 100 + dateTime.minute;
   }
 
-  Future<void> fetchUpcomingNotifications() async {
-    currTime.value = DateTime.now().subtract(const Duration(minutes: 5));
-    Map<dynamic, dynamic> allTrack = _scheduleController.fetchOfflineData();
+  List<int> getHours(Map<dynamic, dynamic> allTrack) {
+    List<int> hours = [];
     List<Schedule> scheduleList =
         _scheduleController.formatToScheduleList(allTrack);
-    specificTimeSchedule.clear();
-    hours.clear();
     for (var schedule in scheduleList) {
       List<int> timeValues = schedule.scheduledTimes.map<int>(((e) {
         return getTimeValue(e);
@@ -182,9 +147,17 @@ class _UserHomePageState extends State<UserHomePage>
     }
     hours.removeWhere(((element) => element < getTimeValue(currTime.value)));
     hours.sort();
+    return hours;
+  }
+
+  List<List<Schedule>> getScheduleTimings(
+      Map<dynamic, dynamic> allTrack, List<int> hours) {
+    List<List<Schedule>> specificTimeSchedule = [];
 
     for (int hour in hours) {
       List<Schedule> scheduleAtTime = [];
+      List<Schedule> scheduleList =
+          _scheduleController.formatToScheduleList(allTrack);
       for (var schedule in scheduleList) {
         var timingValues =
             schedule.scheduledTimes.map<int>((e) => getTimeValue(e)).toList();
@@ -197,13 +170,7 @@ class _UserHomePageState extends State<UserHomePage>
       }
       specificTimeSchedule.add(scheduleAtTime);
     }
-
-    completed.value = await _scheduleController
-        .getCurrDayData(_userStateController.user.value?.uid ?? "ERROR");
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      Future.delayed(const Duration(milliseconds: 300))
-          .then((time) => setState(() {}));
-    });
+    return specificTimeSchedule;
   }
 
   Future<bool> updatePill(String pillName, DateTime time, String amt) async {
@@ -467,31 +434,12 @@ class _UserHomePageState extends State<UserHomePage>
                   const SizedBox(
                     height: 20.0,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: CustomSplashButton(
-                          title: 'Schedule Appt',
-                          onTap: () {
-                            Get.to(() => ScheduleAppointmentPage());
-                          },
-                          padding: const EdgeInsets.symmetric(vertical: 15.0),
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 20.0,
-                      ),
-                      Expanded(
-                        child: CustomSplashButton(
-                          title: 'View Appt',
-                          onTap: () {
-                            Get.to(() => ViewAppointmentPage());
-                          },
-                          padding: const EdgeInsets.symmetric(vertical: 15.0),
-                        ),
-                      ),
-                    ],
+                  CustomSplashButton(
+                    title: 'View Appt',
+                    onTap: () {
+                      Get.to(() => ViewAppointmentPage());
+                    },
+                    padding: const EdgeInsets.symmetric(vertical: 15.0),
                   ),
                   const SizedBox(
                     height: 20.0,
@@ -518,19 +466,21 @@ class _UserHomePageState extends State<UserHomePage>
                   const SizedBox(
                     height: 20.0,
                   ),
-                  Obx(
-                    () => ListView.builder(
+                  Obx(() {
+                    List<int> hours =
+                        getHours(_scheduleController.schedulesData);
+                    List<List<Schedule>> schedules = getScheduleTimings(
+                        _scheduleController.schedulesData, hours);
+                    return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: specificTimeSchedule.length,
+                        itemCount: schedules.length,
                         itemBuilder: ((context, index) {
-                          DateTime scheduledTime = specificTimeSchedule[index]
-                              .first
-                              .scheduledTimes[0];
+                          DateTime scheduledTime =
+                              schedules[index].first.scheduledTimes[0];
                           bool isSkipped = _scheduleController.compareTime(
                                   currTime.value, scheduledTime) >
                               0;
-
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -539,11 +489,8 @@ class _UserHomePageState extends State<UserHomePage>
                                   if (!isSkipped) {
                                     bool result =
                                         await updateAllPillsAtSpecificTime(
-                                            specificTimeSchedule[index],
-                                            context);
-                                    if (result) {
-                                      fetchUpcomingNotifications();
-                                    }
+                                            schedules[index], context);
+                                    if (result) {}
                                   }
                                 },
                                 child: Container(
@@ -576,18 +523,17 @@ class _UserHomePageState extends State<UserHomePage>
                                   direction: Axis.horizontal,
                                   children: [
                                     for (int schIndex = 0;
-                                        schIndex <
-                                            specificTimeSchedule[index].length;
+                                        schIndex < schedules[index].length;
                                         schIndex++)
-                                      _getTimePillDisplay(index, schIndex,
-                                          scheduledTime, isSkipped)
+                                      _getTimePillDisplay(scheduledTime,
+                                          isSkipped, schedules[index][schIndex])
                                   ],
                                 ),
                               ),
                             ],
                           );
-                        })),
-                  ),
+                        }));
+                  }),
                 ]),
               ),
             ],
@@ -598,8 +544,7 @@ class _UserHomePageState extends State<UserHomePage>
   }
 
   Widget _getTimePillDisplay(
-      int index, int scheduleIndex, scheduledTime, bool isSkipped) {
-    Schedule currSchedule = specificTimeSchedule[index][scheduleIndex];
+      scheduledTime, bool isSkipped, Schedule currSchedule) {
     List completedList = completed[currSchedule.pill?.pill ?? ''] ?? [];
     bool isCompleted = completedList.where((element) {
       return (int.tryParse(element.keys.first.toString()) ?? 0) ==

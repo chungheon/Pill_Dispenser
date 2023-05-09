@@ -9,43 +9,21 @@ import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 class ViewAppointmentPage extends StatelessWidget {
   ViewAppointmentPage({Key? key}) : super(key: key);
   final ScheduleController _scheduleController = Get.find<ScheduleController>();
-  final UserStateController _userStateController =
-      Get.find<UserStateController>();
-  final RxList<Appointment> appointments = RxList<Appointment>();
-
-  Future<void> fetchAppointmentData() async {
-    var apptList = await _scheduleController.fetchAppointmentsOnline(
-        _userStateController.user.value?.uid ?? 'ERROR');
-    apptList.sort(((a, b) {
-      if (a.apptDateTime == null || b.apptDateTime == null) {
-        return -1;
-      }
-      if (a.apptDateTime!.isBefore(b.apptDateTime!)) {
-        return -1;
-      } else {
-        return 1;
-      }
-    }));
-    appointments.value = apptList;
-  }
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback(((timeStamp) {
-      fetchAppointmentData();
-    }));
     return StandardScaffold(
         appBar: const StandardAppBar().appBar(),
         child: Obx(() {
           return ListView.builder(
-            itemCount: appointments.length,
+            itemCount: _scheduleController.appointments.length,
             itemBuilder: ((context, index) {
               String dateStr = _scheduleController.formatDateToStr(
-                  appointments[index].apptDateTime ??
+                  _scheduleController.appointments[index].apptDateTime ??
                       DateTime.fromMillisecondsSinceEpoch(0),
                   showDay: true);
               String timeStr = _scheduleController.formatDateToStrTime(
-                  appointments[index].apptDateTime ??
+                  _scheduleController.appointments[index].apptDateTime ??
                       DateTime.fromMillisecondsSinceEpoch(0));
               return Container(
                 decoration: BoxDecoration(
@@ -66,7 +44,7 @@ class ViewAppointmentPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      appointments[index].name ?? "ERROR",
+                      _scheduleController.appointments[index].name ?? "ERROR",
                       style: const TextStyle(
                           fontSize: 20.0, fontWeight: FontWeight.w600),
                     ),
@@ -85,7 +63,7 @@ class ViewAppointmentPage extends StatelessWidget {
                       height: 10.0,
                     ),
                     Text(
-                      'Message: ${appointments[index].message}',
+                      'Message: ${_scheduleController.appointments[index].message}',
                       style: const TextStyle(fontSize: 18.0),
                     ),
                   ],

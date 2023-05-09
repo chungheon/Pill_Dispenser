@@ -5,6 +5,7 @@ import 'package:pill_dispenser/controllers/schedule_controller.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/models/schedule.dart';
 import 'package:pill_dispenser/screens/rescheduler_page.dart';
+import 'package:pill_dispenser/screens/schedule_info_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
@@ -374,24 +375,36 @@ class PillTrackingDetailsPage extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                margin:
-                    const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 15.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                    color: Constants.white,
-                    borderRadius: BorderRadius.circular(20.0),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Constants.black.withOpacity(0.2),
-                          blurRadius: 10.0,
-                          offset: const Offset(0, 2.0))
-                    ]),
-                child: Text(
-                  scheduleList[index].pill?.pill ?? '',
-                  style: const TextStyle(
-                      fontSize: 20.0, fontWeight: FontWeight.w600),
+              GestureDetector(
+                onTap: () {
+                  var schedule = schedules[index];
+                  Get.to(() => ScheduleInfoPage(
+                        medName: schedule.pill?.pill ?? '',
+                        pillsRec: schedule.pill?.amount ?? 1,
+                        dosageRec: schedule.pill?.frequency ?? 1,
+                        typeRec: schedule.pill?.ingestType?.index ?? 0,
+                        timings: schedule.scheduledTimes,
+                      ));
+                },
+                child: Container(
+                  margin:
+                      const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 15.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                      color: Constants.white,
+                      borderRadius: BorderRadius.circular(20.0),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Constants.black.withOpacity(0.2),
+                            blurRadius: 10.0,
+                            offset: const Offset(0, 2.0))
+                      ]),
+                  child: Text(
+                    scheduleList[index].pill?.pill ?? '',
+                    style: const TextStyle(
+                        fontSize: 20.0, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
               Container(

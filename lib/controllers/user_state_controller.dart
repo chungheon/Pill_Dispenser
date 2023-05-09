@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pill_dispenser/controllers/patient_info_mixin.dart';
 import 'package:pill_dispenser/controllers/pill_information_mixin.dart';
 import 'package:pill_dispenser/controllers/user_info_mixin.dart';
+import 'package:pill_dispenser/screens/view_appointment_page.dart';
 
 class UserStateController extends GetxController
     with UserInfoMixin, PatientInfoMixin, PillInformationMixin {
