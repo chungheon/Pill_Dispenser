@@ -133,10 +133,10 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
     Map<String, dynamic> data,
   ) {
     var allergies = Map<String, dynamic>.from(data['allergies'] ?? {});
-    var userAllergies = allergies.keys.toList()
-      ..removeWhere((element) {
-        return allergies[element] != true;
-      });
+    var userAllergies = allergies.keys.toList();
+    userAllergies.removeWhere((element) {
+      return allergies[element] != 'true';
+    });
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
@@ -266,7 +266,9 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
                 child: CustomSplashButton(
                   title: 'Schedule Pill \nQrCode Scan',
                   onTap: () {
-                    Get.to(() => QrScanPage());
+                    Get.to(() => QrScanPage(
+                          patientData: _userStateController.patient[index],
+                        ));
                   },
                   padding: const EdgeInsets.symmetric(vertical: 15.0),
                 ),

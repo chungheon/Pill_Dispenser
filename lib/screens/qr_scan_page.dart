@@ -73,9 +73,8 @@ class _QrScanPageState extends State<QrScanPage> {
                   List<String?> values = code.split("|");
                   //Assume order->name|amt|dosage|type
                   for (int i = values.length; i < 4; i++) {
-                    values.add(null);
+                    values.add(null.toString());
                   }
-
                   Get.off(() => SchedulerPage(
                         medName: values[0],
                         pillsRec: int.tryParse(values[1] ?? ''),

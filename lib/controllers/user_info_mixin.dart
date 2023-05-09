@@ -155,8 +155,9 @@ class UserInfoMixin {
         : DateTime.fromMillisecondsSinceEpoch(userMap['birthday']);
     contactDetails.value = userMap['contact_details'] ?? '';
     displayName.value = userMap['name'] ?? '';
-    var allergiesData = Map<String, dynamic>.from(userMap['allergies'] ?? {});
     allergies.clear();
+    var allergiesData = Map<String, dynamic>.from(userMap['allergies'] ?? {});
+    print(userMap);
     for (var key in allergiesData.keys) {
       if (allergiesData[key] == 'true') {
         allergies.add(key);

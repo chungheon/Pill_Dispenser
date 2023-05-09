@@ -50,7 +50,7 @@ class ScheduleAppointmentPage extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: _buildEditInformationDisplay(
-                    'Message (Optional)', appointmentName, 'Message'),
+                    'Message (Optional)', msg, 'Message'),
               ),
               const SizedBox(
                 height: 20.0,
