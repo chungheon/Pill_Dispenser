@@ -173,6 +173,30 @@ exports.fetchPatientSchedule = functions.region('asia-east2').https.onCall(async
     }
 });
 
+exports.fetchAppointmentsData = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var currentUserId = context.auth.uid;
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var patientEmail = data.patientEmail;
+    var patientUID = data.patientUid;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var apptRef = firestore.collection('user_appointments').doc(patientUID).collection('appointments');
+        var docs = await apptRef.get();
+        var appts = {};
+        docs.forEach((doc)=> {
+            appts[doc.id] = doc.data();
+        });
+        return { 'status': 'success', 'code': 200, 'data': appts };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
 exports.schedulePatientPill = functions.region('asia-east2').https.onCall(async (data, context) => {
     if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
     var currentUserId = context.auth.uid;
@@ -287,7 +311,7 @@ exports.updatePatientAppt = functions.region('asia-east2').https.onCall(async (d
     }
     var apptDateTime = data.apptDateTime;
     var apptName = data.apptName;
-    var apptMsg = data.appMsg;
+    var apptMsg = data.apptMsg;
     var patientUID = data.patientUid;
     var firestore = admin.firestore();
     let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
@@ -338,7 +362,7 @@ exports.addPatientAllergy = functions.region('asia-east2').https.onCall(async (d
         var patientRef = firestore.collection(USERS_LIST).doc(patientEmail);
         await patientRef.set({
             allergies: {
-                [allergyName]: true
+                [allergyName]: "true"
             },
         }, { merge: true });
         return { 'status': 'success', 'code': 200 };
@@ -362,7 +386,7 @@ exports.removePatientAllergy = functions.region('asia-east2').https.onCall(async
         var patientRef = firestore.collection(USERS_LIST).doc(patientEmail);
         await patientRef.set({
             allergies: {
-                [allergyName]: false
+                [allergyName]: "false"
             },
         }, { merge: true });
         return { 'status': 'success', 'code': 200 };
