@@ -86,7 +86,7 @@ class PatientScheduleMixin {
     HttpsCallable callable = _functions.httpsCallable('updatePatientAppt');
     final result = (await callable.call(<String, dynamic>{
       'apptDateTime': apptDateTime,
-      'appName': apptName,
+      'apptName': apptName,
       'apptMsg': apptMsg,
       'patientUid': patientUID,
     }));
@@ -97,15 +97,56 @@ class PatientScheduleMixin {
     return false;
   }
 
-    /*
+  /*
     var apptId = data.apptId;
     var patientUID = data.patientUid;
   */
-  Future<bool> removePatientAppt(String apptId, String patientEmail, String patientUID) async {
+  Future<bool> removePatientAppt(
+      String apptId, String patientEmail, String patientUID) async {
     HttpsCallable callable = _functions.httpsCallable('removePatientAppt');
     final result = (await callable.call(<String, dynamic>{
-      'apptId' : apptId,
+      'apptId': apptId,
       'patientUid': patientUID,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+    return false;
+  }
+
+  /*
+    var allergyName = data.allergyName;
+    var patientUID = data.patientUid;
+    var patientEmail = data.patientEmail;
+  */
+  Future<bool> addPatientAllergy(
+      String allergyName, String patientEmail, String patientUID) async {
+    HttpsCallable callable = _functions.httpsCallable('addPatientAllergy');
+    final result = (await callable.call(<String, dynamic>{
+      'allergyName': allergyName,
+      'patientUid': patientUID,
+      'patientEmail': patientEmail,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+    return false;
+  }
+
+  /*
+    var allergyName = data.allergyName;
+    var patientUID = data.patientUid;
+    var patientEmail = data.patientEmail;
+  */
+  Future<bool> removePatientAllergy(
+      String allergyName, String patientEmail, String patientUID) async {
+    HttpsCallable callable = _functions.httpsCallable('removePatientAllergy');
+    final result = (await callable.call(<String, dynamic>{
+      'allergyName': allergyName,
+      'patientUid': patientUID,
+      'patientEmail': patientEmail,
     }));
     final data = Map<String, dynamic>.from(result.data);
     if ((data['code'] ?? 400) == 200) {

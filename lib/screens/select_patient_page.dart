@@ -4,11 +4,15 @@ import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/datetime_helper.dart';
 import 'package:pill_dispenser/models/schedule.dart';
+import 'package:pill_dispenser/screens/add_allergies_page.dart';
 import 'package:pill_dispenser/screens/add_pill_information_page.dart';
 import 'package:pill_dispenser/screens/patient_weekly_report_page.dart';
 import 'package:pill_dispenser/screens/qr_scan_page.dart';
 import 'package:pill_dispenser/screens/rescheduler_page.dart';
+import 'package:pill_dispenser/screens/schedule_patient_appt_page.dart';
 import 'package:pill_dispenser/screens/scheduler_page.dart';
+import 'package:pill_dispenser/screens/view_appointment_page.dart';
+import 'package:pill_dispenser/screens/view_patient_appt_page.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
 import 'package:pill_dispenser/widgets/loading_dialog.dart';
 import 'package:pill_dispenser/widgets/standard_app_bar.dart';
@@ -27,14 +31,24 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
 
   final isLoading = false.obs;
   final RxList<bool> showDetails = <bool>[].obs;
+
+  Future<void> reload() async {
+    isLoading.value = true;
+    if (mounted) {
+      setState(() {});
+    }
+    await _userStateController.updateRelationships();
+    await _userStateController.fetchAllPatientsData();
+    isLoading.value = false;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      isLoading.value = true;
-      setState(() {});
-      await _userStateController.fetchAllPatientsData();
-      isLoading.value = false;
-      setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      reload();
     });
     showDetails.value =
         List<bool>.generate(_userStateController.patient.length, (index) {
@@ -46,7 +60,22 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
   @override
   Widget build(BuildContext context) {
     return StandardScaffold(
-      appBar: const StandardAppBar().appBar(),
+      appBar: StandardAppBar(
+          action: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: GestureDetector(
+          onTap: () {
+            if (!isLoading.value) {
+              reload();
+            }
+          },
+          child: Icon(
+            Icons.refresh,
+            size: 50.0,
+            color: isLoading.value ? Colors.transparent : Colors.black,
+          ),
+        ),
+      )).appBar(),
       child: Column(
         children: [
           const SizedBox(
@@ -92,7 +121,6 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
                                 index =
                                     index % _userStateController.patient.length;
                                 var data = _userStateController.patient[index];
-
                                 bool isPending = !data.containsKey('name');
 
                                 return Column(
@@ -135,7 +163,7 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
     var allergies = Map<String, dynamic>.from(data['allergies'] ?? {});
     var userAllergies = allergies.keys.toList();
     userAllergies.removeWhere((element) {
-      return allergies[element] != 'true';
+      return (allergies[element].toString()) != 'true';
     });
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -195,12 +223,31 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Container(
-                          padding: const EdgeInsets.only(top: 10.0, left: 10.0),
+                          padding: const EdgeInsets.only(
+                              top: 10.0, left: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                               color: Constants.white, border: Border.all()),
-                          child: const Text(
-                            'Allergies',
-                            style: TextStyle(fontSize: 18.0),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Allergies',
+                                  style: TextStyle(fontSize: 18.0),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Get.to(() => AddAllergiesPage(
+                                        patientData: data,
+                                      ));
+                                },
+                                child: const Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 20.0),
+                                  child: Icon(Icons.edit),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         _buildAllergies(userAllergies),
@@ -242,6 +289,36 @@ class _SelectPatientPageState extends State<SelectPatientPage> {
                   patientData: _userStateController.patient[index]));
             },
             padding: const EdgeInsets.symmetric(vertical: 15.0),
+          ),
+          const SizedBox(
+            height: 20.0,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: CustomSplashButton(
+                  title: 'Schedule Appointment',
+                  onTap: () async {
+                    Get.to(() => SchedulePatientApptPage(
+                        patientData: _userStateController.patient[index]));
+                  },
+                  padding: const EdgeInsets.symmetric(vertical: 15.0),
+                ),
+              ),
+              SizedBox(
+                width: 20.0,
+              ),
+              Expanded(
+                child: CustomSplashButton(
+                  title: 'View Appointments',
+                  onTap: () async {
+                    Get.to(() => ViewPatientApptPage(
+                        _userStateController.patient[index]));
+                  },
+                  padding: const EdgeInsets.symmetric(vertical: 15.0),
+                ),
+              ),
+            ],
           ),
           const SizedBox(
             height: 20.0,

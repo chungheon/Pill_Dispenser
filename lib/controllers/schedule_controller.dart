@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,6 +23,7 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
   final RxList<Appointment> appointments = RxList<Appointment>([]);
   final RxMap<dynamic, dynamic> schedulesData = RxMap<dynamic, dynamic>({});
   final RxMap<dynamic, dynamic> currDayData = RxMap<dynamic, dynamic>({});
+  final RxMap<dynamic, dynamic> reportData = RxMap<dynamic, dynamic>({});
   StreamSubscription? scheduleStream;
   StreamSubscription? apptStream;
   StreamSubscription? rptStream;
@@ -33,10 +35,8 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
         .collection("user_appointments")
         .doc(userId)
         .collection('appointments');
-    DateTime now = DateTime.now();
     DocumentReference rptRef = _firestore.collection("user_report").doc(userId);
     scheduleStream = scheduleRef.snapshots().listen((event) {
-      print(event.data());
       schedulesData.value =
           Map<dynamic, dynamic>.from((event.data() ?? {}) as Map);
       updateNotifications((event.data() ?? {}) as Map);
@@ -45,25 +45,31 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
       updateAppointments(event.docs);
     });
     rptStream = rptRef.snapshots().listen((event) {
+      DateTime now = DateTime.now();
       var map = ((event.data() ?? {}) as Map);
-      var element = ((map[formatDateToStr(now) + userId] ?? {}) as Map);
-      currDayData.clear();
-      for (var element in element.entries) {
-        var completedData = element.value
-            .toString()
-            .replaceAll('[', '')
-            .replaceAll(']', '')
-            .replaceAll('{', '')
-            .replaceAll('}', '')
-            .split(',')
-            .map<Map<String, String>>((e) {
-          var data = e.split(':');
-          Map<String, String> mapData = {};
-          mapData[data[0]] = data[1];
-          return mapData;
-        }).toList();
-        currDayData[element.key] = (completedData);
+      Map<dynamic, dynamic> reportData = {};
+      for (var element in map.entries) {
+        var dayData = {};
+        element.value.entries.forEach((e) async {
+          var completedData = e.value
+              .toString()
+              .replaceAll('[', '')
+              .replaceAll(']', '')
+              .replaceAll('{', '')
+              .replaceAll('}', '')
+              .split(',')
+              .map<Map<String, String>>((e) {
+            var data = e.split(':');
+            Map<String, String> mapData = {};
+            mapData[data[0]] = data[1];
+            return mapData;
+          }).toList();
+          dayData[e.key] = completedData;
+        });
+        reportData[element.key] = dayData;
       }
+      currDayData.value = reportData[formatDateToStr(now) + userId];
+      this.reportData.value = reportData;
     });
   }
 
@@ -397,8 +403,7 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
     List<int> completed = [];
     for (int i = 0; i < diffDays.inDays * -1; i++) {
       date = date.add(const Duration(days: 1));
-      Box boxData = await Hive.openBox(formatDateToStr(date) + userId);
-      Map dayData = boxData.toMap();
+      Map dayData = this.reportData[formatDateToStr(date) + userId] ?? {};
       int totalCompleted = 0;
       totalCompleted = (dayData[pillName] ?? []).length;
       completed.add(totalCompleted);
@@ -406,25 +411,25 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
     return completed;
   }
 
-  Future<List<int>> getCompletedAmount(
-      DateTime startDate, DateTime endDate, String userId) async {
-    Duration diffDays = startDate.difference(endDate);
-    DateTime date = startDate;
-    List<int> completed = [];
-    for (int i = 0; i < diffDays.inDays * -1; i++) {
-      date = date.add(const Duration(days: 1));
-      Box boxData = await Hive.openBox(formatDateToStr(date) + userId);
-      Map dayData = boxData.toMap();
-      int totalCompleted = 0;
-      dayData.forEach((key, value) {
-        if (value.runtimeType == List) {
-          totalCompleted += (value as List).length;
-        }
-      });
-      completed.add(totalCompleted);
-    }
-    return completed;
-  }
+  // Future<List<int>> getCompletedAmount(
+  //     DateTime startDate, DateTime endDate, String userId) async {
+  //   Duration diffDays = startDate.difference(endDate);
+  //   DateTime date = startDate;
+  //   List<int> completed = [];
+  //   for (int i = 0; i < diffDays.inDays * -1; i++) {
+  //     date = date.add(const Duration(days: 1));
+  //     Box boxData = await Hive.openBox(formatDateToStr(date) + userId);
+  //     Map dayData = boxData.toMap();
+  //     int totalCompleted = 0;
+  //     dayData.forEach((key, value) {
+  //       if (value.runtimeType == List) {
+  //         totalCompleted += (value as List).length;
+  //       }
+  //     });
+  //     completed.add(totalCompleted);
+  //   }
+  //   return completed;
+  // }
 
   Future<void> scheduleAppointment(String userId, String appointmentName,
       DateTime appointmentDate, DateTime appointmentTime,

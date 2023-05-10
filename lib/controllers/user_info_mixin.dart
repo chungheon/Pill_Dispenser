@@ -26,6 +26,25 @@ class UserInfoMixin {
     guardian.clear();
   }
 
+  Future<bool> removeAllergy(String allergyName) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      try {
+        await _firestore.collection('users_list').doc(user.email).set(
+          {
+            'allergies': {allergyName: 'false'},
+          },
+          SetOptions(merge: true),
+        ).onError((error, stackTrace) => throw Exception(error));
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   Future<bool> addAllergy(String allergyName) async {
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
@@ -91,6 +110,7 @@ class UserInfoMixin {
     await fetchRelationships().then((relationships) {
       var guardians = relationships['guardians'];
       var patients = relationships['patients'];
+      print(patients);
       patient.clear();
       guardian.clear();
       for (var key in guardians.keys) {
@@ -231,5 +251,12 @@ class UserInfoMixin {
       return true;
     }
     return false;
+  }
+
+  void updatePatientInfoLocally(Map<String, dynamic> patientData) {
+    var patientIndex = patient
+        .indexWhere((element) => element['email'] == patientData['email']);
+    patient[patientIndex] = patientData;
+    patient.refresh();
   }
 }

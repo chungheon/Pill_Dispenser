@@ -11,9 +11,10 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../constants.dart';
 import '../widgets/custom_input_text_box_widget.dart';
+import '../widgets/loading_dialog.dart';
 
-class ScheduleAppointmentPage extends StatelessWidget {
-  ScheduleAppointmentPage({Key? key, this.patientData}) : super(key: key);
+class SchedulePatientApptPage extends StatelessWidget {
+  SchedulePatientApptPage({Key? key, this.patientData}) : super(key: key);
   final ScheduleController _scheduleController = Get.find<ScheduleController>();
   final UserStateController _userStateController =
       Get.find<UserStateController>();
@@ -26,6 +27,29 @@ class ScheduleAppointmentPage extends StatelessWidget {
   final Rxn<DateTime> selectedTime = Rxn<DateTime>();
   final Map<String, dynamic>? patientData;
 
+  Future<bool> onTapSchedule() async {
+    bool result = await _scheduleController.updatePatientAppt(
+      DateTime(
+              selectedDate.value!.year,
+              selectedDate.value!.month,
+              selectedDate.value!.day,
+              selectedTime.value!.hour,
+              selectedTime.value!.minute)
+          .millisecondsSinceEpoch,
+      appointmentName.value,
+      msg.value,
+      patientData!['email'],
+      patientData!['users_id'],
+    );
+    if (result) {
+      await _userStateController.fetchPatientData(patientData!['users_id'],
+          refreshAppt: true);
+      print(_userStateController.patient[0]['appts']);
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -37,6 +61,16 @@ class ScheduleAppointmentPage extends StatelessWidget {
           appBar: const StandardAppBar().appBar(),
           child: ListView(
             children: [
+              const SizedBox(height: 15.0),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Patient: ${patientData?["name"] ?? ""} \nEmail: ${patientData?["email"] ?? ""}',
+                  style: const TextStyle(
+                      fontSize: 20.0, fontWeight: FontWeight.w500),
+                ),
+              ),
               const SizedBox(
                 height: 10.0,
               ),
@@ -106,12 +140,11 @@ class ScheduleAppointmentPage extends StatelessWidget {
                     if (appointmentName.trim().isNotEmpty &&
                         selectedDate.value != null &&
                         selectedTime.value != null) {
-                      await _scheduleController.scheduleAppointment(
-                          _userStateController.user.value?.uid ?? 'ERROR',
-                          appointmentName.value,
-                          selectedDate.value ?? DateTime.now(),
-                          selectedTime.value ?? DateTime.now(),
-                          message: msg.value);
+                      bool result = await LoadingDialog.showLoadingDialog(
+                          onTapSchedule(), context, () {
+                        return ModalRoute.of(context)?.isCurrent != true;
+                      });
+
                       Get.back();
                     } else {
                       showDialog(
@@ -126,6 +159,9 @@ class ScheduleAppointmentPage extends StatelessWidget {
                     }
                   },
                 ),
+              ),
+              const SizedBox(
+                height: 40.0,
               ),
             ],
           )),

@@ -114,7 +114,9 @@ class UserStateController extends GetxController
   Future<void> fetchPatientData(String userUID,
       {bool refreshSchedule = false,
       bool refreshReport = false,
-      bool refreshInfo = false}) async {
+      bool refreshInfo = false,
+      bool refreshAppt = false}) async {
+    print('here');
     for (var pIndex = 0; pIndex < patient.length; pIndex++) {
       if ((patient[pIndex]['users_id'] ?? 'Not Exists') == userUID) {
         if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
@@ -131,6 +133,11 @@ class UserStateController extends GetxController
           var pPills = await fetchPatientsPillInformation(patient[pIndex]);
           patient[pIndex]['pill_info'] = pPills;
         }
+
+        if (!patient[pIndex].keys.contains('appts') || refreshAppt) {
+          var pAppt = await fetchAppointmentsData(patient[pIndex]);
+          patient[pIndex]['appts'] = pAppt;
+        }
         break;
       }
     }
@@ -139,7 +146,8 @@ class UserStateController extends GetxController
   Future<void> fetchAllPatientsData(
       {bool refreshSchedule = false,
       bool refreshReport = false,
-      bool refreshInfo = false}) async {
+      bool refreshInfo = false,
+      bool refreshAppt = false}) async {
     for (var pIndex = 0; pIndex < patient.length; pIndex++) {
       var data = patient[pIndex];
 
@@ -157,6 +165,11 @@ class UserStateController extends GetxController
         if (!patient[pIndex].keys.contains('pill_info') || refreshInfo) {
           var pPills = await fetchPatientsPillInformation(patient[pIndex]);
           patient[pIndex]['pill_info'] = pPills;
+        }
+
+        if (!patient[pIndex].keys.contains('appts') || refreshAppt) {
+          var pAppt = await fetchAppointmentsData(patient[pIndex]);
+          patient[pIndex]['appts'] = pAppt;
         }
       }
     }

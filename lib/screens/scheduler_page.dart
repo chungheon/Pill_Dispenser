@@ -121,7 +121,7 @@ class SchedulerPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Patient: ${patientData?["name"] ?? ""} ${patientData?["email"] ?? ""}',
+                  'Patient: ${patientData?["name"] ?? ""} \nEmail: ${patientData?["email"] ?? ""}',
                   style: const TextStyle(
                       fontSize: 20.0, fontWeight: FontWeight.w500),
                 ),

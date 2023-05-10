@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pill_dispenser/controllers/schedule_controller.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/screens/forget_password_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
@@ -11,7 +12,8 @@ import 'package:pill_dispenser/widgets/standard_scaffold.dart';
 import '../constants.dart';
 
 class AddAllergiesPage extends StatefulWidget {
-  AddAllergiesPage({Key? key}) : super(key: key);
+  AddAllergiesPage({Key? key, this.patientData}) : super(key: key);
+  final Map<String, dynamic>? patientData;
 
   @override
   State<AddAllergiesPage> createState() => _AddAllergiesPageState();
@@ -20,9 +22,98 @@ class AddAllergiesPage extends StatefulWidget {
 class _AddAllergiesPageState extends State<AddAllergiesPage> {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
+  final ScheduleController _scheduleController = Get.find<ScheduleController>();
 
   final RxString allergy = ''.obs;
   final RxBool isLoading = false.obs;
+
+  Future<void> addAllergy() async {
+    if (widget.patientData != null) {
+      bool result = await LoadingDialog.showLoadingDialog(
+          _scheduleController.addPatientAllergy(
+              allergy.value,
+              widget.patientData!['email'] ?? '',
+              widget.patientData!['users_id'] ?? ''),
+          context,
+          () => ModalRoute.of(context)?.isCurrent != true);
+      if (result) {
+        widget.patientData!['allergies'][allergy.value] = true;
+        _userStateController.updatePatientInfoLocally(widget.patientData ?? {});
+        allergy.value = '';
+      } else {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const DefaultErrorDialog(
+                title: 'Unable to add allergy',
+                message: 'Error adding allergy, please try again later.',
+              );
+            }));
+      }
+    } else {
+      bool result = await LoadingDialog.showLoadingDialog(
+          _userStateController.addAllergy(allergy.value),
+          context,
+          () => ModalRoute.of(context)?.isCurrent != true);
+      if (result) {
+        await _userStateController.fetchUserDetailsOnline();
+        allergy.value = '';
+      } else {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const DefaultErrorDialog(
+                title: 'Unable to add allergy',
+                message: 'Error adding allergy, please try again later.',
+              );
+            }));
+      }
+    }
+  }
+
+  Future<void> deleteAllergy(String allergyName) async {
+    if (widget.patientData != null) {
+      bool result = await LoadingDialog.showLoadingDialog(
+          _scheduleController.removePatientAllergy(
+              allergyName,
+              widget.patientData!['email'] ?? '',
+              widget.patientData!['users_id'] ?? ''),
+          context,
+          () => ModalRoute.of(context)?.isCurrent != true);
+      if (result) {
+        (widget.patientData!['allergies'] as Map).remove(allergyName);
+        _userStateController.updatePatientInfoLocally(widget.patientData ?? {});
+        allergy.value = '';
+      } else {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const DefaultErrorDialog(
+                title: 'Unable to add allergy',
+                message: 'Error adding allergy, please try again later.',
+              );
+            }));
+      }
+    } else {
+      bool result = await LoadingDialog.showLoadingDialog(
+          _userStateController.removeAllergy(allergy.value),
+          context,
+          () => ModalRoute.of(context)?.isCurrent != true);
+      if (result) {
+        await _userStateController.fetchUserDetailsOnline();
+        allergy.value = '';
+      } else {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const DefaultErrorDialog(
+                title: 'Unable to remove allergy',
+                message: 'Error removing allergy, please try again later.',
+              );
+            }));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +126,22 @@ class _AddAllergiesPageState extends State<AddAllergiesPage> {
           appBar: const StandardAppBar().appBar(),
           child: Column(
             children: [
+              widget.patientData == null
+                  ? Container()
+                  : Container(
+                      margin: EdgeInsets.only(top: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: Text(
+                                  'Patient Name:\n${widget.patientData!['name']}')),
+                          Expanded(
+                              child: Text(
+                                  'Patient Email:\n${widget.patientData!['email']}'))
+                        ],
+                      ),
+                    ),
               const SizedBox(
                 height: 10.0,
               ),
@@ -54,24 +161,8 @@ class _AddAllergiesPageState extends State<AddAllergiesPage> {
                     FocusManager.instance.primaryFocus?.unfocus();
                     if (!isLoading.value) {
                       isLoading.value = true;
-                      bool result = await LoadingDialog.showLoadingDialog(
-                          _userStateController.addAllergy(allergy.value),
-                          context,
-                          () => ModalRoute.of(context)?.isCurrent != true);
-                      if (result) {
-                        await _userStateController.fetchUserDetailsOnline();
-                        allergy.value = '';
-                      } else {
-                        showDialog(
-                            context: context,
-                            builder: ((context) {
-                              return const DefaultErrorDialog(
-                                title: 'Unable to add allergy',
-                                message:
-                                    'Error adding allergy, please try again later.',
-                              );
-                            }));
-                      }
+                      print(allergy.value);
+                      await addAllergy();
                       isLoading.value = false;
                       setState(() {});
                     }
@@ -84,13 +175,38 @@ class _AddAllergiesPageState extends State<AddAllergiesPage> {
               Expanded(
                 child: Obx(
                   () {
+                    var allergyData = _userStateController.allergies.value;
+                    if (widget.patientData != null) {
+                      allergyData = List<String>.from(
+                          (widget.patientData!['allergies'] ?? {}).keys);
+                    }
                     return ListView.builder(
-                      itemCount: _userStateController.allergies.length,
+                      itemCount: allergyData.length,
                       itemBuilder: ((context, index) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: _buildInformationDisplay(
-                              _userStateController.allergies[index]),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                  child: _buildInformationDisplay(
+                                      allergyData[index])),
+                              GestureDetector(
+                                onTap: () async {
+                                  if (!isLoading.value) {
+                                    isLoading.value = true;
+                                    print(allergyData[index]);
+                                    await deleteAllergy(allergyData[index]);
+                                    isLoading.value = false;
+                                    setState(() {});
+                                  }
+                                },
+                                child: Icon(
+                                  Icons.delete,
+                                  size: 40.0,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }),
                     );

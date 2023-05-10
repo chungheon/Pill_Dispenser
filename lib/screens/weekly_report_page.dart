@@ -115,7 +115,7 @@ class WeeklyReportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(((timeStamp) async {
       DateTime now = DateTime.now();
-      var scheduleData = _scheduleController.fetchOfflineData();
+      var scheduleData = _scheduleController.schedulesData;
       pillCompletedValues.clear();
       highestValue.clear();
       totalNotificationsPills.clear();
@@ -133,9 +133,6 @@ class WeeklyReportPage extends StatelessWidget {
           pillNames.add(key);
         },
       );
-      // completedValues.value = completed;
-      // highestValue.value = completed.reduce(max) + 1;
-      // totalNotifications.value = total;
     }));
     return StandardScaffold(
         appBar: const StandardAppBar().appBar(),
