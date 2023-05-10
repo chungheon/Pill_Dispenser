@@ -74,4 +74,43 @@ class PatientScheduleMixin {
     }
     return false;
   }
+
+  /*
+   var apptDateTime = data.apptDateTime;
+    var apptName = data.apptName;
+    var apptMsg = data.appMsg;
+    var patientUID = data.patientUid;
+  */
+  Future<bool> updatePatientAppt(int apptDateTime, String apptName,
+      String apptMsg, String patientEmail, String patientUID) async {
+    HttpsCallable callable = _functions.httpsCallable('updatePatientAppt');
+    final result = (await callable.call(<String, dynamic>{
+      'apptDateTime': apptDateTime,
+      'appName': apptName,
+      'apptMsg': apptMsg,
+      'patientUid': patientUID,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+    return false;
+  }
+
+    /*
+    var apptId = data.apptId;
+    var patientUID = data.patientUid;
+  */
+  Future<bool> removePatientAppt(String apptId, String patientEmail, String patientUID) async {
+    HttpsCallable callable = _functions.httpsCallable('removePatientAppt');
+    final result = (await callable.call(<String, dynamic>{
+      'apptId' : apptId,
+      'patientUid': patientUID,
+    }));
+    final data = Map<String, dynamic>.from(result.data);
+    if ((data['code'] ?? 400) == 200) {
+      return true;
+    }
+    return false;
+  }
 }

@@ -9,6 +9,7 @@ const USER_SCH = 'user_schedule';
 const USERS_LIST = 'users_list';
 const USER_ID_KEY = 'users_id';
 const PILL_INFO = 'information';
+const USER_APPTS = 'user_appointments';
 
 exports.reqGuardian = functions.region('asia-east2').https.onCall(async (data, context) => {
     if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
@@ -272,6 +273,98 @@ exports.removePillInformation = functions.region('asia-east2').https.onCall(asyn
             updateMap[pillName] = FieldValue.delete();
         }
         await scheduleRef.update(updateMap);
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.updatePatientAppt = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var apptDateTime = data.apptDateTime;
+    var apptName = data.apptName;
+    var apptMsg = data.appMsg;
+    var patientUID = data.patientUid;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var apptRef = firestore.collection(USER_APPTS).doc(patientUID).collection('appointments').doc();
+        await apptRef.set({
+            name: apptName,
+            apptDateTime: apptDateTime,
+            message: apptMsg,
+        }, { merge: true });
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.removePatientAppt = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var apptId = data.apptId;
+    var patientUID = data.patientUid;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var apptRef = firestore.collection(USER_APPTS).doc(patientUID).collection('appointments').doc(apptId);
+        apptRef.delete();
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.addPatientAllergy = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var allergyName = data.allergyName;
+    var patientUID = data.patientUid;
+    var patientEmail = data.patientEmail;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var patientRef = firestore.collection(USERS_LIST).doc(patientEmail);
+        await patientRef.set({
+            allergies: {
+                [allergyName]: true
+            },
+        }, { merge: true });
+        return { 'status': 'success', 'code': 200 };
+    } else {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+});
+
+exports.removePatientAllergy = functions.region('asia-east2').https.onCall(async (data, context) => {
+    if (!context.auth) return { status: 'error', code: 401, message: 'Not signed in' }
+    var grdEmail = context.auth?.token?.email;
+    if (grdEmail == null) {
+        return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };
+    }
+    var allergyName = data.allergyName;
+    var patientUID = data.patientUid;
+    var patientEmail = data.patientEmail;
+    var firestore = admin.firestore();
+    let guardianDocs = (await firestore.collection(GRD_PAT_PATH).doc(patientUID).collection('Guardian').get()).docs;
+    if (containsObject(grdEmail.toLowerCase(), guardianDocs)) {
+        var patientRef = firestore.collection(USERS_LIST).doc(patientEmail);
+        await patientRef.set({
+            allergies: {
+                [allergyName]: false
+            },
+        }, { merge: true });
         return { 'status': 'success', 'code': 200 };
     } else {
         return { 'status': 'error', 'code': 401, 'message': 'User is not authorized' };

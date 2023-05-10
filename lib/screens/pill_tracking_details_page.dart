@@ -4,7 +4,6 @@ import 'package:pill_dispenser/constants.dart';
 import 'package:pill_dispenser/controllers/schedule_controller.dart';
 import 'package:pill_dispenser/controllers/user_state_controller.dart';
 import 'package:pill_dispenser/models/schedule.dart';
-import 'package:pill_dispenser/screens/rescheduler_page.dart';
 import 'package:pill_dispenser/screens/schedule_info_page.dart';
 import 'package:pill_dispenser/widgets/custom_input_text_box_widget.dart';
 import 'package:pill_dispenser/widgets/custom_splash_button.dart';
@@ -17,11 +16,9 @@ class PillTrackingDetailsPage extends StatelessWidget {
   final UserStateController _userStateController =
       Get.find<UserStateController>();
   final RxString searchTerm = RxString('');
-  final RxList<Schedule> scheduleList = <Schedule>[].obs;
   final RxList<Schedule> searchList = <Schedule>[].obs;
   final RxMap completed = {}.obs;
   final RxInt completedIntake = 0.obs;
-  final RxInt totalIntake = 0.obs;
   final RxInt viewType = 0.obs;
 
   Future<bool> updateAllPillsAtSpecificTime(
@@ -240,7 +237,7 @@ class PillTrackingDetailsPage extends StatelessWidget {
       }
       specificTimeSchedule.add(scheduleAtTime);
     }
-
+    var completedCounter = 0;
     return ListView.builder(
         itemCount: specificTimeSchedule.length,
         itemBuilder: ((context, index) {
@@ -253,12 +250,10 @@ class PillTrackingDetailsPage extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () async {
-                  if (!isSkipped) {
+                  if (!isSkipped &&
+                      completedCounter != specificTimeSchedule[index].length) {
                     bool result = await updateAllPillsAtSpecificTime(
                         specificTimeSchedule[index], context);
-                    if (result) {
-                      updateSchedule();
-                    }
                   }
                 },
                 child: Container(
@@ -287,56 +282,66 @@ class PillTrackingDetailsPage extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(
                     horizontal: 20.0, vertical: 15.0),
                 padding: const EdgeInsets.all(10),
-                child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: specificTimeSchedule[index].length,
-                    itemBuilder: ((context, scheduleIndex) {
-                      Schedule currSchedule =
-                          specificTimeSchedule[index][scheduleIndex];
-                      List completedList =
-                          completed[currSchedule.pill?.pill ?? ''] ?? [];
-                      bool isCompleted = completedList
-                          .where((element) =>
-                              (int.tryParse(element.keys.first.toString()) ??
-                                  0) ==
-                              scheduledTime.millisecondsSinceEpoch)
-                          .isNotEmpty;
-                      return Container(
-                        width: 100.0,
-                        margin: const EdgeInsets.only(right: 15.0),
-                        decoration: BoxDecoration(
-                            color: isCompleted
-                                ? Constants.primary.withOpacity(0.5)
-                                : Constants.white,
-                            borderRadius: BorderRadius.circular(15.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Constants.black.withOpacity(0.2),
-                                blurRadius: 10.0,
-                              )
-                            ]),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              currSchedule.pill?.pill ?? "",
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              isCompleted
-                                  ? 'Completed'
-                                  : isSkipped
-                                      ? 'Skipped'
-                                      : 'Upcoming',
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      );
-                    })),
+                child: Obx(() {
+                  Map<dynamic, dynamic> dayData =
+                      _scheduleController.currDayData.value;
+
+                  return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: specificTimeSchedule[index].length,
+                      itemBuilder: ((context, scheduleIndex) {
+                        Schedule currSchedule =
+                            specificTimeSchedule[index][scheduleIndex];
+                        List completedList =
+                            dayData[currSchedule.pill?.pill ?? ''] ?? [];
+                        bool isCompleted = completedList
+                            .where((element) =>
+                                (int.tryParse(element.keys.first.toString()) ??
+                                    0) ==
+                                scheduledTime.millisecondsSinceEpoch)
+                            .isNotEmpty;
+                        if (isCompleted) {
+                          completedCounter++;
+                        }
+                        return Container(
+                          width: 100.0,
+                          margin: const EdgeInsets.only(right: 15.0),
+                          decoration: BoxDecoration(
+                              color: isCompleted
+                                  ? Constants.primary.withOpacity(0.5)
+                                  : Constants.white,
+                              borderRadius: BorderRadius.circular(15.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Constants.black.withOpacity(0.2),
+                                  blurRadius: 10.0,
+                                )
+                              ]),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                currSchedule.pill?.pill ?? "",
+                                style: const TextStyle(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                isCompleted
+                                    ? 'Completed'
+                                    : isSkipped
+                                        ? 'Skipped'
+                                        : 'Upcoming',
+                                style: const TextStyle(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        );
+                      }));
+                }),
               )
             ],
           );
@@ -367,148 +372,155 @@ class PillTrackingDetailsPage extends StatelessWidget {
         ),
       );
     }
-    return ListView.builder(
-        itemCount: schedules.length,
-        itemBuilder: ((context, index) {
-          List completedList =
-              completed[schedules[index].pill?.pill ?? ''] ?? [];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  var schedule = schedules[index];
-                  Get.to(() => ScheduleInfoPage(
-                        medName: schedule.pill?.pill ?? '',
-                        pillsRec: schedule.pill?.amount ?? 1,
-                        dosageRec: schedule.pill?.frequency ?? 1,
-                        typeRec: schedule.pill?.ingestType?.index ?? 0,
-                        timings: schedule.scheduledTimes,
-                      ));
-                },
-                child: Container(
-                  margin:
-                      const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 15.0, vertical: 10.0),
-                  decoration: BoxDecoration(
-                      color: Constants.white,
-                      borderRadius: BorderRadius.circular(20.0),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Constants.black.withOpacity(0.2),
-                            blurRadius: 10.0,
-                            offset: const Offset(0, 2.0))
-                      ]),
-                  child: Text(
-                    scheduleList[index].pill?.pill ?? '',
-                    style: const TextStyle(
-                        fontSize: 20.0, fontWeight: FontWeight.w600),
+    return Obx(
+      () {
+        var dayData = _scheduleController.currDayData.value;
+        return ListView.builder(
+            itemCount: schedules.length,
+            itemBuilder: ((context, index) {
+              List completedList =
+                  dayData[schedules[index].pill?.pill ?? ''] ?? [];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      var schedule = schedules[index];
+                      Get.to(() => ScheduleInfoPage(
+                            medName: schedule.pill?.pill ?? '',
+                            pillsRec: schedule.pill?.amount ?? 1,
+                            dosageRec: schedule.pill?.frequency ?? 1,
+                            typeRec: schedule.pill?.ingestType?.index ?? 0,
+                            timings: schedule.scheduledTimes,
+                          ));
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(
+                          top: 15.0, left: 20.0, right: 20.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                          color: Constants.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Constants.black.withOpacity(0.2),
+                                blurRadius: 10.0,
+                                offset: const Offset(0, 2.0))
+                          ]),
+                      child: Text(
+                        schedules[index].pill?.pill ?? '',
+                        style: const TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Container(
-                height: 100.0,
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 15.0),
-                padding: const EdgeInsets.all(10),
-                child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    shrinkWrap: true,
-                    clipBehavior: Clip.none,
-                    itemCount: schedules[index].scheduledTimes.length,
-                    itemBuilder: ((context, timeIndex) {
-                      DateTime scheduledTime =
-                          schedules[index].scheduledTimes[timeIndex];
-                      bool isCompleted = completedList
-                          .where((element) =>
-                              int.tryParse(element.keys.first.toString()) ==
-                              scheduledTime.millisecondsSinceEpoch)
-                          .isNotEmpty;
-                      bool isSkipped = _scheduleController.compareTime(
-                              currTime, scheduledTime) >
-                          0;
-                      return GestureDetector(
-                        onTap: () async {
-                          if (!isSkipped && !isCompleted) {
-                            bool result = await updatePill(
-                                schedules[index].pill?.pill ?? 'ERROR',
-                                scheduledTime,
-                                (schedules[index].pill?.amount ?? 1).toString(),
-                                context);
-                            if (result) {
-                              updateSchedule();
-                            }
-                          }
-                        },
-                        child: Container(
-                          width: 100.0,
-                          margin: const EdgeInsets.only(right: 15.0),
-                          decoration: BoxDecoration(
-                              color: isCompleted
-                                  ? Constants.primary.withOpacity(0.5)
-                                  : Constants.white,
-                              borderRadius: BorderRadius.circular(15.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Constants.black.withOpacity(0.2),
-                                  blurRadius: 10.0,
-                                )
-                              ]),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${scheduledTime.hour.toString().padLeft(2, "0")}:${scheduledTime.minute.toString().padRight(2, "0")}',
-                                style: const TextStyle(
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w500),
+                  Container(
+                    height: 100.0,
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 15.0),
+                    padding: const EdgeInsets.all(10),
+                    child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        shrinkWrap: true,
+                        clipBehavior: Clip.none,
+                        itemCount: schedules[index].scheduledTimes.length,
+                        itemBuilder: ((context, timeIndex) {
+                          DateTime scheduledTime =
+                              schedules[index].scheduledTimes[timeIndex];
+                          bool isCompleted = completedList
+                              .where((element) =>
+                                  int.tryParse(element.keys.first.toString()) ==
+                                  scheduledTime.millisecondsSinceEpoch)
+                              .isNotEmpty;
+                          bool isSkipped = _scheduleController.compareTime(
+                                  currTime, scheduledTime) >
+                              0;
+                          return GestureDetector(
+                            onTap: () async {
+                              if (!isSkipped && !isCompleted) {
+                                bool result = await updatePill(
+                                    schedules[index].pill?.pill ?? 'ERROR',
+                                    scheduledTime,
+                                    (schedules[index].pill?.amount ?? 1)
+                                        .toString(),
+                                    context);
+                              }
+                            },
+                            child: Container(
+                              width: 100.0,
+                              margin: const EdgeInsets.only(right: 15.0),
+                              decoration: BoxDecoration(
+                                  color: isCompleted
+                                      ? Constants.primary.withOpacity(0.5)
+                                      : Constants.white,
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Constants.black.withOpacity(0.2),
+                                      blurRadius: 10.0,
+                                    )
+                                  ]),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${scheduledTime.hour.toString().padLeft(2, "0")}:${scheduledTime.minute.toString().padRight(2, "0")}',
+                                    style: const TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    isCompleted
+                                        ? 'Completed'
+                                        : isSkipped
+                                            ? 'Skipped'
+                                            : 'Upcoming',
+                                    style: const TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                isCompleted
-                                    ? 'Completed'
-                                    : isSkipped
-                                        ? 'Skipped'
-                                        : 'Upcoming',
-                                style: const TextStyle(
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    })),
-              )
-            ],
-          );
-        }));
+                            ),
+                          );
+                        })),
+                  )
+                ],
+              );
+            }));
+      },
+    );
   }
 
-  Future<void> updateSchedule() async {
-    Map<dynamic, dynamic> data = _scheduleController.fetchOfflineData();
-    completedIntake.value = 0;
-    completed.value = await _scheduleController
-        .getCurrDayData(_userStateController.user.value?.uid ?? "ERROR");
+  int getCompletedIntake(Map<dynamic, dynamic> completed) {
+    int totalCompleted = 0;
     completed.forEach((key, value) {
-      completedIntake.value += (value as List).length;
+      totalCompleted += (value as List).length;
     });
+    return totalCompleted;
+  }
+
+  int getTotalIntake(Map<dynamic, dynamic> schedules) {
+    var schedulesList = _scheduleController.formatToScheduleList(schedules);
+    int totalIntake = 0;
+    schedulesList
+        .forEach(((element) => totalIntake += element.scheduledTimes.length));
+    return totalIntake;
+  }
+
+  List<Schedule> getScheduleList(Map<dynamic, dynamic> data) {
     var schedules = _scheduleController.formatToScheduleList(data);
-    totalIntake.value = 0;
-    schedules.forEach(
-        ((element) => totalIntake.value += element.scheduledTimes.length));
-    scheduleList.clear();
-    scheduleList.addAll(schedules);
-    scheduleList.refresh();
+    return schedules;
   }
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      updateSchedule();
-    });
     DateTime now = DateTime.now().subtract(const Duration(minutes: 5));
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      completed.value = _scheduleController.currDayData;
+    });
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
@@ -558,7 +570,7 @@ class PillTrackingDetailsPage extends StatelessWidget {
                     ]),
                 child: Obx(
                   () => Text(
-                    'Your plan for today\n${completedIntake.toString()} of ${totalIntake.toString()} Completed',
+                    'Your plan for today\n${getCompletedIntake(_scheduleController.currDayData).toString()} of ${getTotalIntake(_scheduleController.schedulesData).toString()} Completed',
                     style: const TextStyle(
                         fontSize: 20.0, fontWeight: FontWeight.w700),
                   ),
@@ -601,6 +613,8 @@ class PillTrackingDetailsPage extends StatelessWidget {
                 child: ScrollConfiguration(
                   behavior: const ScrollBehavior().copyWith(overscroll: false),
                   child: Obx(() {
+                    var scheduleList =
+                        getScheduleList(_scheduleController.schedulesData);
                     if (searchTerm.isNotEmpty) {
                       searchList.clear();
                       for (Schedule schedule in scheduleList) {

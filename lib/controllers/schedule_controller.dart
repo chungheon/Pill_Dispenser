@@ -19,10 +19,12 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
   bool permission = false;
   Box? scheduleBox;
   Box? pillBox;
-  final RxList<Appointment> appointments = RxList<Appointment>();
+  final RxList<Appointment> appointments = RxList<Appointment>([]);
   final RxMap<dynamic, dynamic> schedulesData = RxMap<dynamic, dynamic>({});
+  final RxMap<dynamic, dynamic> currDayData = RxMap<dynamic, dynamic>({});
   StreamSubscription? scheduleStream;
   StreamSubscription? apptStream;
+  StreamSubscription? rptStream;
 
   Future<void> setupStreamListener(String userId) async {
     DocumentReference scheduleRef =
@@ -31,13 +33,37 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
         .collection("user_appointments")
         .doc(userId)
         .collection('appointments');
+    DateTime now = DateTime.now();
+    DocumentReference rptRef = _firestore.collection("user_report").doc(userId);
     scheduleStream = scheduleRef.snapshots().listen((event) {
+      print(event.data());
       schedulesData.value =
           Map<dynamic, dynamic>.from((event.data() ?? {}) as Map);
       updateNotifications((event.data() ?? {}) as Map);
     });
     apptStream = apptRef.snapshots().listen((event) {
       updateAppointments(event.docs);
+    });
+    rptStream = rptRef.snapshots().listen((event) {
+      var map = ((event.data() ?? {}) as Map);
+      var element = ((map[formatDateToStr(now) + userId] ?? {}) as Map);
+      currDayData.clear();
+      for (var element in element.entries) {
+        var completedData = element.value
+            .toString()
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll('{', '')
+            .replaceAll('}', '')
+            .split(',')
+            .map<Map<String, String>>((e) {
+          var data = e.split(':');
+          Map<String, String> mapData = {};
+          mapData[data[0]] = data[1];
+          return mapData;
+        }).toList();
+        currDayData[element.key] = (completedData);
+      }
     });
   }
 
@@ -70,15 +96,10 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
 
   Future<void> updatePillStatus(DateTime scheduledTime, DateTime now,
       String pillName, String userId) async {
-    if (pillBox == null || formatDateToStr(now) != pillBox!.name) {
-      pillBox = await Hive.openBox(formatDateToStr(now) + userId);
-    }
-
-    var existData = pillBox?.get(pillName, defaultValue: []);
-    existData.add(
+    var array = currDayData[pillName] ?? [];
+    array.add(
         {scheduledTime.millisecondsSinceEpoch: now.millisecondsSinceEpoch});
-    await updatePillStatusOnline(existData, userId, now, pillName);
-    pillBox?.put(pillName, existData);
+    await updatePillStatusOnline(array, userId, now, pillName);
   }
 
   Future<void> updatePillStatusOnline(

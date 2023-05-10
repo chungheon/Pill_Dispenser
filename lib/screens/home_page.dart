@@ -30,6 +30,7 @@ class HomePage extends StatelessWidget {
       progress.value = "Setting up Local Storage...";
       await _scheduleController.setBox(_userStateController.user.value!.uid);
       _userStateController.syncProgress.value = 10;
+
       await _scheduleController
           .setupStreamListener(_userStateController.user.value!.uid);
       // final offlineData = _scheduleController.fetchOfflineData();
@@ -124,6 +125,7 @@ class _UserHomePageState extends State<UserHomePage> {
   final RxMap completed = {}.obs;
   final Rx<DateTime> currTime =
       DateTime.now().subtract(const Duration(minutes: 5)).obs;
+  var completedCounter = 0;
 
   @override
   void dispose() {
@@ -333,6 +335,23 @@ class _UserHomePageState extends State<UserHomePage> {
         false;
   }
 
+  bool isTimeCompleted(List<Schedule> schedules) {
+    var count = 0;
+    var dayData = _scheduleController.currDayData;
+    DateTime scheduledTime = schedules.first.scheduledTimes[0];
+    for (Schedule schedule in schedules) {
+      List completedList = dayData[schedule.pill?.pill ?? ''] ?? [];
+      bool isCompleted = completedList.where((element) {
+        return (int.tryParse(element.keys.first.toString()) ?? 0) ==
+            scheduledTime.millisecondsSinceEpoch;
+      }).isNotEmpty;
+      if (isCompleted) {
+        count++;
+      }
+    }
+    return count == schedules.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StandardScaffold(
@@ -481,16 +500,17 @@ class _UserHomePageState extends State<UserHomePage> {
                           bool isSkipped = _scheduleController.compareTime(
                                   currTime.value, scheduledTime) >
                               0;
+                          bool timeCompleted =
+                              isTimeCompleted(schedules[index]);
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               GestureDetector(
                                 onTap: () async {
-                                  if (!isSkipped) {
+                                  if (!isSkipped && !timeCompleted) {
                                     bool result =
                                         await updateAllPillsAtSpecificTime(
                                             schedules[index], context);
-                                    if (result) {}
                                   }
                                 },
                                 child: Container(
@@ -545,42 +565,49 @@ class _UserHomePageState extends State<UserHomePage> {
 
   Widget _getTimePillDisplay(
       scheduledTime, bool isSkipped, Schedule currSchedule) {
-    List completedList = completed[currSchedule.pill?.pill ?? ''] ?? [];
-    bool isCompleted = completedList.where((element) {
-      return (int.tryParse(element.keys.first.toString()) ?? 0) ==
-          scheduledTime.millisecondsSinceEpoch;
-    }).isNotEmpty;
-    return Container(
-      padding: const EdgeInsets.all(15.0),
-      decoration: BoxDecoration(
-          color: isCompleted
-              ? Constants.primary.withOpacity(0.5)
-              : Constants.white,
-          borderRadius: BorderRadius.circular(15.0),
-          boxShadow: [
-            BoxShadow(
-              color: Constants.black.withOpacity(0.2),
-              blurRadius: 10.0,
-            )
-          ]),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            currSchedule.pill?.pill ?? "",
-            style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
+    return Obx(
+      () {
+        var dayData = _scheduleController.currDayData;
+        List completedList = dayData[currSchedule.pill?.pill ?? ''] ?? [];
+        bool isCompleted = completedList.where((element) {
+          return (int.tryParse(element.keys.first.toString()) ?? 0) ==
+              scheduledTime.millisecondsSinceEpoch;
+        }).isNotEmpty;
+        return Container(
+          padding: const EdgeInsets.all(15.0),
+          decoration: BoxDecoration(
+              color: isCompleted
+                  ? Constants.primary.withOpacity(0.5)
+                  : Constants.white,
+              borderRadius: BorderRadius.circular(15.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Constants.black.withOpacity(0.2),
+                  blurRadius: 10.0,
+                )
+              ]),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                currSchedule.pill?.pill ?? "",
+                style: const TextStyle(
+                    fontSize: 18.0, fontWeight: FontWeight.w500),
+              ),
+              Text(
+                isCompleted
+                    ? 'Completed'
+                    : isSkipped
+                        ? 'Skipped'
+                        : 'Upcoming',
+                style: const TextStyle(
+                    fontSize: 18.0, fontWeight: FontWeight.w500),
+              ),
+            ],
           ),
-          Text(
-            isCompleted
-                ? 'Completed'
-                : isSkipped
-                    ? 'Skipped'
-                    : 'Upcoming',
-            style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
