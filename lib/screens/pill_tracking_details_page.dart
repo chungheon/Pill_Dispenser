@@ -63,15 +63,35 @@ class PillTrackingDetailsPage extends StatelessWidget {
                                       title: 'Yes',
                                       onTap: () async {
                                         DateTime currTime = DateTime.now();
+                                        var dayData =
+                                            _scheduleController.currDayData;
                                         for (var schedule in schedules) {
-                                          await _scheduleController
-                                              .updatePillStatus(
-                                                  schedule.scheduledTimes[0],
-                                                  currTime,
-                                                  schedule.pill?.pill ?? "",
-                                                  _userStateController
-                                                          .user.value?.uid ??
-                                                      'ERROR');
+                                          List completedList = dayData[
+                                                  schedule.pill?.pill ?? ''] ??
+                                              [];
+                                          bool isCompleted =
+                                              completedList.where((element) {
+                                            var pillTime =
+                                                getTimeValue(scheduledTime);
+                                            var completeTime = getTimeValue(
+                                                DateTime
+                                                    .fromMillisecondsSinceEpoch(
+                                                        int.tryParse(element
+                                                                .keys.first
+                                                                .toString()) ??
+                                                            0));
+                                            return pillTime == completeTime;
+                                          }).isNotEmpty;
+                                          if (!isCompleted) {
+                                            await _scheduleController
+                                                .updatePillStatus(
+                                                    schedule.scheduledTimes[0],
+                                                    currTime,
+                                                    schedule.pill?.pill ?? "",
+                                                    _userStateController
+                                                            .user.value?.uid ??
+                                                        'ERROR');
+                                          }
                                         }
                                         Get.back(result: true);
                                       },
@@ -222,7 +242,6 @@ class PillTrackingDetailsPage extends StatelessWidget {
 
     hours = hours.toSet().toList();
     hours.sort();
-
     for (int hour in hours) {
       List<Schedule> scheduleAtTime = [];
       for (var schedule in schedules) {
@@ -294,12 +313,14 @@ class PillTrackingDetailsPage extends StatelessWidget {
                             specificTimeSchedule[index][scheduleIndex];
                         List completedList =
                             dayData[currSchedule.pill?.pill ?? ''] ?? [];
-                        bool isCompleted = completedList
-                            .where((element) =>
-                                (int.tryParse(element.keys.first.toString()) ??
-                                    0) ==
-                                scheduledTime.millisecondsSinceEpoch)
-                            .isNotEmpty;
+                        bool isCompleted = completedList.where((element) {
+                          var pillTime = getTimeValue(scheduledTime);
+                          var completeTime = getTimeValue(
+                              DateTime.fromMillisecondsSinceEpoch(
+                                  int.tryParse(element.keys.first.toString()) ??
+                                      0));
+                          return pillTime == completeTime;
+                        }).isNotEmpty;
                         if (isCompleted) {
                           completedCounter++;
                         }
@@ -522,8 +543,10 @@ class PillTrackingDetailsPage extends StatelessWidget {
     for (Schedule schedule in schedules) {
       List completedList = dayData[schedule.pill?.pill ?? ''] ?? [];
       bool isCompleted = completedList.where((element) {
-        return (int.tryParse(element.keys.first.toString()) ?? 0) ==
-            scheduledTime.millisecondsSinceEpoch;
+        var pillTime = getTimeValue(scheduledTime);
+        var completeTime = getTimeValue(DateTime.fromMillisecondsSinceEpoch(
+            int.tryParse(element.keys.first.toString()) ?? 0));
+        return pillTime == completeTime;
       }).isNotEmpty;
       if (isCompleted) {
         count++;

@@ -148,6 +148,7 @@ class _UserHomePageState extends State<UserHomePage> {
       hours.addAll(timeValues);
     }
     hours.removeWhere(((element) => element < getTimeValue(currTime.value)));
+    hours = hours.toSet().toList();
     hours.sort();
     return hours;
   }
@@ -342,8 +343,10 @@ class _UserHomePageState extends State<UserHomePage> {
     for (Schedule schedule in schedules) {
       List completedList = dayData[schedule.pill?.pill ?? ''] ?? [];
       bool isCompleted = completedList.where((element) {
-        return (int.tryParse(element.keys.first.toString()) ?? 0) ==
-            scheduledTime.millisecondsSinceEpoch;
+        var pillTime = getTimeValue(scheduledTime);
+        var completeTime = getTimeValue(DateTime.fromMillisecondsSinceEpoch(
+            int.tryParse(element.keys.first.toString()) ?? 0));
+        return pillTime == completeTime;
       }).isNotEmpty;
       if (isCompleted) {
         count++;
@@ -570,8 +573,10 @@ class _UserHomePageState extends State<UserHomePage> {
         var dayData = _scheduleController.currDayData;
         List completedList = dayData[currSchedule.pill?.pill ?? ''] ?? [];
         bool isCompleted = completedList.where((element) {
-          return (int.tryParse(element.keys.first.toString()) ?? 0) ==
-              scheduledTime.millisecondsSinceEpoch;
+          var pillTime = getTimeValue(scheduledTime);
+          var completeTime = getTimeValue(DateTime.fromMillisecondsSinceEpoch(
+              int.tryParse(element.keys.first.toString()) ?? 0));
+          return pillTime == completeTime;
         }).isNotEmpty;
         return Container(
           margin: const EdgeInsets.only(right: 10.0),

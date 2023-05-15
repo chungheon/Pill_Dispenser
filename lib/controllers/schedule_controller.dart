@@ -103,8 +103,10 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
   Future<void> updatePillStatus(DateTime scheduledTime, DateTime now,
       String pillName, String userId) async {
     var array = currDayData[pillName] ?? [];
-    array.add(
-        {scheduledTime.millisecondsSinceEpoch: now.millisecondsSinceEpoch});
+    array.add({
+      scheduledTime.millisecondsSinceEpoch.toString():
+          now.millisecondsSinceEpoch.toString()
+    });
     await updatePillStatusOnline(array, userId, now, pillName);
   }
 
