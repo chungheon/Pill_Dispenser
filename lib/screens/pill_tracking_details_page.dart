@@ -251,7 +251,7 @@ class PillTrackingDetailsPage extends StatelessWidget {
               GestureDetector(
                 onTap: () async {
                   if (!isSkipped &&
-                      completedCounter != specificTimeSchedule[index].length) {
+                      !isTimeCompleted(specificTimeSchedule[index])) {
                     bool result = await updateAllPillsAtSpecificTime(
                         specificTimeSchedule[index], context);
                   }
@@ -513,6 +513,23 @@ class PillTrackingDetailsPage extends StatelessWidget {
   List<Schedule> getScheduleList(Map<dynamic, dynamic> data) {
     var schedules = _scheduleController.formatToScheduleList(data);
     return schedules;
+  }
+
+  bool isTimeCompleted(List<Schedule> schedules) {
+    var count = 0;
+    var dayData = _scheduleController.currDayData;
+    DateTime scheduledTime = schedules.first.scheduledTimes[0];
+    for (Schedule schedule in schedules) {
+      List completedList = dayData[schedule.pill?.pill ?? ''] ?? [];
+      bool isCompleted = completedList.where((element) {
+        return (int.tryParse(element.keys.first.toString()) ?? 0) ==
+            scheduledTime.millisecondsSinceEpoch;
+      }).isNotEmpty;
+      if (isCompleted) {
+        count++;
+      }
+    }
+    return count == schedules.length;
   }
 
   @override

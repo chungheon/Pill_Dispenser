@@ -26,7 +26,6 @@ class ViewPatientApptPage extends StatelessWidget {
               Map<String, dynamic>.from(patientData['appts'] ?? {});
           var key = patientAppts.keys.elementAt(index);
           var data = patientAppts[key];
-          print(data);
           String dateStr = _scheduleController.formatDateToStr(
               DateTime.fromMillisecondsSinceEpoch(data['apptDateTime'] ??
                   DateTime.fromMillisecondsSinceEpoch(0)

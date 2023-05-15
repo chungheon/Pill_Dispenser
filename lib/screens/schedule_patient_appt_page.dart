@@ -44,7 +44,6 @@ class SchedulePatientApptPage extends StatelessWidget {
     if (result) {
       await _userStateController.fetchPatientData(patientData!['users_id'],
           refreshAppt: true);
-      print(_userStateController.patient[0]['appts']);
     }
 
     return result;

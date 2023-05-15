@@ -122,30 +122,26 @@ class PillsInformationPage extends StatelessWidget {
                           behavior: const ScrollBehavior()
                               .copyWith(overscroll: false),
                           child: Obx(
-                            () => ListView.builder(
-                              itemCount: searchTerm.isNotEmpty
-                                  ? _informationController
-                                      .searchList.value.length
-                                  : _informationController
-                                      .pillsList.value.length,
-                              itemBuilder: (context, index) {
-                                String pillKey = searchTerm.isNotEmpty
-                                    ? _informationController
-                                        .searchList.value.keys
-                                        .elementAt(index)
-                                    : _informationController
-                                        .pillsList.value.keys
-                                        .elementAt(index)
-                                        .toString();
-                                return itemWidget(
-                                    pillKey,
-                                    searchTerm.isNotEmpty
-                                        ? _informationController
-                                            .searchList[pillKey]
-                                        : _informationController
-                                            .pillsList[pillKey]);
-                              },
-                            ),
+                            () {
+                              var infoList = searchTerm.isNotEmpty
+                                  ? _informationController.searchList.value
+                                  : _informationController.pillsList.value;
+                              var keys = infoList.keys.toList();
+                              keys.sort();
+
+                              return ListView.builder(
+                                  itemCount: infoList.length,
+                                  itemBuilder: (context, index) {
+                                    String pillKey = keys[index].toString();
+                                    return itemWidget(
+                                        pillKey,
+                                        searchTerm.isNotEmpty
+                                            ? _informationController
+                                                .searchList[pillKey]
+                                            : _informationController
+                                                .pillsList[pillKey]);
+                                  });
+                            },
                           ),
                         ),
                       ),

@@ -83,8 +83,9 @@ class Appointment {
 
   Appointment.fromJson(Map<String, dynamic> data) {
     name = data['name'];
-    apptDateTime =
-        DateTime.fromMillisecondsSinceEpoch(data['apptDateTime'] ?? 0);
+    apptDateTime = DateTime.fromMillisecondsSinceEpoch(
+        int.tryParse((data['apptDateTime']).toString()) ?? 0);
+
     message = data['message'];
   }
 

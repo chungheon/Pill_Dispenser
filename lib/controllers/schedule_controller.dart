@@ -68,7 +68,7 @@ class ScheduleController extends GetxController with PatientScheduleMixin {
         });
         reportData[element.key] = dayData;
       }
-      currDayData.value = reportData[formatDateToStr(now) + userId];
+      currDayData.value = reportData[formatDateToStr(now) + userId] ?? {};
       this.reportData.value = reportData;
     });
   }

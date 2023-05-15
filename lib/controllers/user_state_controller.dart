@@ -116,7 +116,6 @@ class UserStateController extends GetxController
       bool refreshReport = false,
       bool refreshInfo = false,
       bool refreshAppt = false}) async {
-    print('here');
     for (var pIndex = 0; pIndex < patient.length; pIndex++) {
       if ((patient[pIndex]['users_id'] ?? 'Not Exists') == userUID) {
         if (!patient[pIndex].keys.contains('schedule') || refreshSchedule) {
