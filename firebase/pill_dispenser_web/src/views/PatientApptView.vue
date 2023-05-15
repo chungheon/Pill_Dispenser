@@ -152,9 +152,9 @@ export default {
                 var patientUID = data.patientUid;
             */
             const updatePatientAppt = httpsCallable(functions, 'updatePatientAppt');
-            console.log(state.patients[this.patientEmail]['users_id']);
+            var date = new Date(this.apptDateTime.valueOf());
             return await updatePatientAppt({
-                'apptDateTime': this.apptDateTime.valueOf(),
+                'apptDateTime': date.valueOf(),
                 'apptName': this.apptName,
                 'apptMsg': this.apptMsg,
                 'patientUid': state.patients[this.patientEmail]['users_id'],
