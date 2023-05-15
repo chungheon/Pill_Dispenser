@@ -574,6 +574,7 @@ class _UserHomePageState extends State<UserHomePage> {
               scheduledTime.millisecondsSinceEpoch;
         }).isNotEmpty;
         return Container(
+          margin: const EdgeInsets.only(right: 10.0),
           padding: const EdgeInsets.all(15.0),
           decoration: BoxDecoration(
               color: isCompleted
