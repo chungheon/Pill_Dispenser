@@ -178,6 +178,13 @@ a:hover {
                 <RouterLink :to="{ name: 'pillinformation', params: { patientEmail: patientData['email'] } }">Add Pill
                     Information</RouterLink>
             </div>
+            <div class="option">
+                <RouterLink :to="{ name: 'appointmentinfo', params: { patientEmail: patientData['email'] } }">Manage Patient Appointments</RouterLink>
+            </div>
+            <div class="option">
+                <RouterLink :to="{ name: 'patientallergies', params: { patientEmail: patientData['email'] } }">Update Patient Allergies</RouterLink>
+            </div>
+            
         </div>
     </section>
     <div style="display: flex; margin-bottom: 10px;">
@@ -188,7 +195,9 @@ a:hover {
         <div>
             <h2>Allergies</h2>
             <div v-for="v, k in patientData['allergies']">
-                <h2 style="padding: 0px 0px 0px 10px;  border: 1px solid black;">{{ k }}</h2>
+                <div v-if="v == 'true'">
+                    <h2 style="padding: 0px 0px 0px 10px;  border: 1px solid black;">{{ k }}</h2>
+                </div>
             </div>
         </div>
         <br />

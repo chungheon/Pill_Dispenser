@@ -36,7 +36,8 @@ export default {
         const reportPromise = this.fetchReport();
         const schedulePromise = this.fetchScheduleData();
         const pillPromise = this.fetchPillInfo();
-        await Promise.all([reportPromise, schedulePromise, pillPromise]);
+        const apptPromise = this.fetchApptInfo();
+        await Promise.all([reportPromise, schedulePromise, pillPromise, apptPromise]);
         this.isLoading = false;
         fetchingState.fetchingPatientDetails = false;
       }
@@ -81,6 +82,18 @@ export default {
             .then((result) => {
               const data = result.data;
               state.patients[patient]["pill_info"] = data["data"];
+            });
+        }
+      }
+    },
+    async fetchApptInfo() {
+      const apptInfo = httpsCallable(functions, 'fetchAppointmentsData');
+      for (var patient of Object.keys(state.patients)) {
+        if (state.patients[patient] != 'pending' && state.patients[patient]["appt"] == null) {
+          await apptInfo({ 'patientUid': state.patients[patient]['users_id'] })
+            .then((result) => {
+              const data = result.data;
+              state.patients[patient]['appt'] = data['data'];
             });
         }
       }

@@ -6,6 +6,8 @@ import AddPillSchedulePatient from '../views/AddPillSchedulePatient.vue'
 import WeeklyReport from '../views/WeeklyReportView.vue'
 import AddPillInformation from '../views/AddPillInformationView.vue'
 import EditPillSchedulePatient from '../views/EditPillSchedulePatient.vue'
+import PatientApptView from'../views/PatientApptView.vue'
+import PatientAllergyView from '../views/PatientAllergyView.vue'
 
 
 const router = createRouter({
@@ -35,6 +37,16 @@ const router = createRouter({
       path: '/patients/:patientEmail/weeklyreport',
       name: 'weeklyreport',
       component: WeeklyReport,
+    },
+    {
+      path: '/patients/:patientEmail/patientapptinfo',
+      name: 'appointmentinfo',
+      component: PatientApptView,
+    },
+    {
+      path: '/patients/:patientEmail/patientallergies',
+      name: 'patientallergies',
+      component: PatientAllergyView,
     },
     {
       path: '/patients/:patientEmail/addpillinformation',

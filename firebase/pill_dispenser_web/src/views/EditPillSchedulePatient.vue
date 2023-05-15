@@ -154,7 +154,7 @@ export default {
                 });
         },
         async schedulePillForPatient(pillData) {
-            this.customDialogTitle = 'Scheduleing Pill!';
+            this.customDialogTitle = 'Scheduling Pill!';
             this.customDialogText = 'Please wait while pill is scheduled!';
             this.customDialogVisible = true;
             const schedulePatientPill = httpsCallable(functions, 'schedulePatientPill');
